@@ -15,7 +15,7 @@ reference later.
 cp -r harness-engineering ~/.claude/skills/harness-engineering
 ```
 
-Claude should now recognize `/engineering` as a skill. Verify:
+Claude should now recognize `/harness-engineering` as a skill. Verify:
 
 ```bash
 ls ~/.claude/skills/harness-engineering/SKILL.md

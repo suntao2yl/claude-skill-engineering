@@ -1,6 +1,6 @@
 ---
 name: harness-engineering
-description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness-plan skill (delegates implementation phase to it). 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts as handoff protocol. Triggers: /engineering, lifecycle, phase, discovery"
+description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness-plan skill (delegates implementation phase to it). 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts as handoff protocol. Triggers: /harness-engineering, lifecycle, phase, discovery"
 allowed-tools:
   - Read
   - Write
@@ -22,14 +22,14 @@ across 7 fixed phases via structured JSON artifacts on disk.
 ## Prerequisites (check on first invocation)
 
 **This skill REQUIRES the `harness-plan` skill** to execute the implementation
-phase. Before running any `/engineering` command for the first time, verify:
+phase. Before running any `/harness-engineering` command for the first time, verify:
 
 ```bash
 test -f ~/.claude/skills/harness-plan/SKILL.md || find ~/.claude/plugins -path '*/harness-plan/skills/harness-plan/SKILL.md' -print -quit | grep -q .
 ```
 
 If the check fails:
-1. Do NOT proceed with `/engineering init`.
+1. Do NOT proceed with `/harness-engineering init`.
 2. Tell the user: "engineering requires the harness-plan skill, which is not
    installed. Please install it first."
 3. If the user has a harness-plan source, guide them to copy it to
@@ -73,18 +73,18 @@ Users cannot add/remove phases. A `mode: minimal` lifecycle may skip phases
 ## Command Router
 
 ```text
-/engineering init "goal"       → Create .engineering/ + AUTO-DRIVE to completion
-/engineering status            → One-screen lifecycle view
-/engineering phase <name>      → Enter a phase, print upstream + schema
-/engineering advance           → Validate current phase exit, advance
-/engineering revise <phase>    → Mark upstream revising; downstream → stale
-/engineering reset             → Archive .engineering/, start fresh
+/harness-engineering init "goal"       → Create .engineering/ + AUTO-DRIVE to completion
+/harness-engineering status            → One-screen lifecycle view
+/harness-engineering phase <name>      → Enter a phase, print upstream + schema
+/harness-engineering advance           → Validate current phase exit, advance
+/harness-engineering revise <phase>    → Mark upstream revising; downstream → stale
+/harness-engineering reset             → Archive .engineering/, start fresh
 ```
 
 **Routing:**
-- `/engineering init "goal"`: if `.engineering/` exists, ask before archiving. Then run auto-drive loop.
-- `/engineering` (no args): if `.engineering/` exists, resume auto-drive loop. Otherwise tell user no lifecycle exists.
-- `/engineering status`: one-shot status, do NOT enter loop.
+- `/harness-engineering init "goal"`: if `.engineering/` exists, ask before archiving. Then run auto-drive loop.
+- `/harness-engineering` (no args): if `.engineering/` exists, resume auto-drive loop. Otherwise tell user no lifecycle exists.
+- `/harness-engineering status`: one-shot status, do NOT enter loop.
 
 ## Auto-Drive Protocol
 
@@ -216,7 +216,7 @@ Precondition: `.engineering/` does not exist.
 
 ## PHASE ENTRY
 
-When user runs `/engineering phase <name>`:
+When user runs `/harness-engineering phase <name>`:
 
 1. Validate that upstream phase(s) are in `approved` status (or user forces).
 2. Print upstream artifact summaries (one-liner each).
@@ -230,7 +230,7 @@ When user runs `/engineering phase <name>`:
 
 ## ADVANCE
 
-When user runs `/engineering advance`:
+When user runs `/harness-engineering advance`:
 
 1. Read current_phase from lifecycle.json.
 2. Validate current phase's active artifact passes its schema.
@@ -241,7 +241,7 @@ When user runs `/engineering advance`:
 
 ## REVISE
 
-When user runs `/engineering revise <phase>`:
+When user runs `/harness-engineering revise <phase>`:
 
 1. Mark phase's active artifact status = `revising`.
 2. Walk downstream phases; mark any artifact that references this upstream
@@ -278,7 +278,7 @@ harness-plan --project-root .engineering/implementation/ "<campaign goal>"
 ```
 Harness-plan creates `.engineering/implementation/.harness/` and runs normally.
 The engineering orchestrator reads `.engineering/implementation/.harness/campaign.json`
-to show implementation status in `/engineering status`.
+to show implementation status in `/harness-engineering status`.
 
 ## Script Canon
 

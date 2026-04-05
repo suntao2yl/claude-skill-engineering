@@ -18,8 +18,8 @@ upfront — some will become obvious once we start building.
      `lifecycle.json`. Avoid forcing users to migrate.**
 
 3. **Do we need a `harness-engineering` command surface, or reuse `/harness`?**
-   - Separate `/engineering` command seems cleaner.
-   - Subcommands: `/engineering init`, `/engineering phase discovery`, etc.
+   - Separate `/harness-engineering` command seems cleaner.
+   - Subcommands: `/harness-engineering init`, `/harness-engineering phase discovery`, etc.
 
 ## State model
 
@@ -41,7 +41,7 @@ upfront — some will become obvious once we start building.
 
 7. **What triggers a forward transition?**
    - Auto-advance when the previous phase's artifact passes validation?
-   - Explicit user command (`/engineering advance`)?
+   - Explicit user command (`/harness-engineering advance`)?
    - **Leaning: auto-advance with user confirmation for destructive or
      cross-phase-blocking transitions** (mirrors `harness` v2 auto-advance).
 
@@ -83,7 +83,7 @@ upfront — some will become obvious once we start building.
 
 14. **How do we avoid overwhelming users with artifacts?**
     - 7 phases × many JSON files × schemas = a lot.
-    - Need a `/engineering status` that condenses all to one readable view
+    - Need a `/harness-engineering status` that condenses all to one readable view
       (like `harness_summary.py` does for a campaign).
 
 ## Not yet thought through

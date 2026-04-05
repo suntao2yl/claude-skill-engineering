@@ -70,7 +70,7 @@ def main() -> int:
 
     if eng.exists() and not args.force:
         print(f"Error: .engineering/ already exists at {eng}", file=sys.stderr)
-        print("Use --force to overwrite or run /engineering reset.", file=sys.stderr)
+        print("Use --force to overwrite or run /harness-engineering reset.", file=sys.stderr)
         return 1
 
     # Create directory structure

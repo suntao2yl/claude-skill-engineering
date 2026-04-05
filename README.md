@@ -93,7 +93,7 @@ before running `init`.
 # after installing both skills:
 
 # in Claude Code:
-/engineering init "Build a Python CLI that counts lines in a file, emit JSON, ship v0.1"
+/harness-engineering init "Build a Python CLI that counts lines in a file, emit JSON, ship v0.1"
 
 # Claude will:
 # 1. create .engineering/ with 7 phase subdirs + seed REQ-001

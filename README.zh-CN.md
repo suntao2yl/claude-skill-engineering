@@ -81,7 +81,7 @@ git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude
 # 两个 skill 都装好之后：
 
 # 在 Claude Code 里：
-/engineering init "构建一个 Python CLI 统计文件行数，输出 JSON，发布 v0.1"
+/harness-engineering init "构建一个 Python CLI 统计文件行数，输出 JSON，发布 v0.1"
 
 # Claude 会：
 # 1. 创建 .engineering/ 含 7 个相位子目录 + 种子 REQ-001
