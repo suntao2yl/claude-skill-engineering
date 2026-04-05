@@ -1,6 +1,6 @@
 ---
 name: harness-engineering
-description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness skill (delegates implementation phase to it). 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts as handoff protocol. Triggers: /engineering, lifecycle, phase, discovery"
+description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness-plan skill (delegates implementation phase to it). 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts as handoff protocol. Triggers: /engineering, lifecycle, phase, discovery"
 allowed-tools:
   - Read
   - Write
@@ -21,29 +21,29 @@ across 7 fixed phases via structured JSON artifacts on disk.
 
 ## Prerequisites (check on first invocation)
 
-**This skill REQUIRES the `harness` skill** to execute the implementation
+**This skill REQUIRES the `harness-plan` skill** to execute the implementation
 phase. Before running any `/engineering` command for the first time, verify:
 
 ```bash
-test -f ~/.claude/skills/harness/SKILL.md || test -f ~/.claude/plugins/cache/harness/SKILL.md
+test -f ~/.claude/skills/harness-plan/SKILL.md || find ~/.claude/plugins -path '*/harness-plan/skills/harness-plan/SKILL.md' -print -quit | grep -q .
 ```
 
 If the check fails:
 1. Do NOT proceed with `/engineering init`.
-2. Tell the user: "engineering requires the harness skill, which is not
+2. Tell the user: "engineering requires the harness-plan skill, which is not
    installed. Please install it first."
-3. If the user has a harness source, guide them to copy it to
-   `~/.claude/skills/harness/`, or use the engineering repo's `install.sh`
-   with `--with-harness <path>`.
-4. Resume only after harness is present.
+3. If the user has a harness-plan source, guide them to copy it to
+   `~/.claude/skills/harness-plan/`, or use the engineering repo's `install.sh`
+   with `--with-harness-plan <path>`.
+4. Resume only after harness-plan is present.
 
-Discovery/design/architecture phases technically work without harness, but
+Discovery/design/architecture phases technically work without harness-plan, but
 the lifecycle will block at implementation. Fail fast instead.
 
 ## Hard Invariants
 
 1. All cross-phase state lives in `.engineering/` at the project root.
-2. Exactly one active unit per phase (mirror of harness's "one feature").
+2. Exactly one active unit per phase (mirror of harness-plan's "one feature").
 3. Phases communicate only through artifacts on disk. Never through agent chat.
 4. Only the phase owner may mutate that phase's artifacts.
 5. Upstream revision marks downstream artifacts `stale`; stale inputs block
@@ -150,14 +150,14 @@ At a gate, advance exits with code 42. The loop should:
 
 ### Implementation phase special-case
 
-Implementation delegates to harness:
+Implementation delegates to harness-plan:
 1. Executor reads design+architecture artifacts
-2. Executor decomposes goal into harness features with REAL verification commands
+2. Executor decomposes goal into harness-plan features with REAL verification commands
 3. Executor shows feature plan to user (this is NOT a risk gate but a transparency pause)
-4. Executor drives harness: pick_next → checkpoint → transition to done for each feature
+4. Executor drives harness-plan: pick_next → checkpoint → transition to done for each feature
 5. Executor fills campaign-ref.json when `progress_counts.done == total`
 6. advance runs live verification (executes each feature's `verification.command`)
-7. If live verification fails, feature wasn't really done → back to harness
+7. If live verification fails, feature wasn't really done → back to harness-plan
 
 ### Executor retry protocol
 
@@ -171,7 +171,7 @@ If advance returns exit 1 with validation errors:
 
 - Auto-confirm risk gates
 - Bypass `--skip-hard-validation` (always escalate instead)
-- Skip the harness feature-plan review in implementation
+- Skip the harness-plan feature-plan review in implementation
 
 ## Runtime Files
 
@@ -225,7 +225,7 @@ When user runs `/engineering phase <name>`:
 5. Hand off to the phase executor:
    - discovery/design/architecture/test/release/ops: Claude subagent with
      phase-specific prompt
-   - implementation: shell out to harness with
+   - implementation: shell out to harness-plan with
      `--project-root .engineering/implementation/`
 
 ## ADVANCE
@@ -270,13 +270,13 @@ ops            · pending
 Last transition: 2026-04-05T10:00Z (discovery → design)
 ```
 
-## Relation to harness
+## Relation to harness-plan
 
-Implementation phase invokes harness:
+Implementation phase invokes harness-plan:
 ```bash
-harness --project-root .engineering/implementation/ "<campaign goal>"
+harness-plan --project-root .engineering/implementation/ "<campaign goal>"
 ```
-Harness creates `.engineering/implementation/.harness/` and runs normally.
+Harness-plan creates `.engineering/implementation/.harness/` and runs normally.
 The engineering orchestrator reads `.engineering/implementation/.harness/campaign.json`
 to show implementation status in `/engineering status`.
 
@@ -301,8 +301,8 @@ Never hand-edit `.engineering/*.json` when a script exists.
   single-writer like git working tree.
 - **No schema migration.** `schema_version` mismatches produce a warning
   but no auto-migration. Bump manually when the schema changes.
-- **Harness progress is read-only inside engineering.** The orchestrator
+- **Harness-plan progress is read-only inside engineering.** The orchestrator
   reads `session-summary.json` for display but never writes to
-  `.harness/`. All harness state changes go through harness scripts.
+  `.harness/`. All harness-plan state changes go through harness-plan scripts.
 - **Forward transitions only auto-advance.** `revise` is explicit, and
   accepting stale artifacts requires `--refresh-stale`.

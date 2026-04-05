@@ -16,14 +16,14 @@ English · [中文](./README.zh-CN.md)
 
 ## What this is
 
-`harness-engineering` is not a replacement for `harness`. It is one layer up:
+`harness-engineering` is not a replacement for `harness-plan`. It is one layer up:
 
 ```
 harness-engineering  ← lifecycle orchestrator (this project)
         │
-        └── invokes harness as the implementation-phase executor
+        └── invokes harness-plan as the implementation-phase executor
                  │
-                 └── harness drives feature-level coding
+                 └── harness-plan drives feature-level coding
 ```
 
 ### The 7 phases (locked)
@@ -42,22 +42,22 @@ propagates downstream.
 
 ---
 
-## Dependency: REQUIRES `harness` skill
+## Dependency: REQUIRES `harness-plan` skill
 
 This skill **delegates implementation phase** to the
-[`harness`](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
-skill. Without harness, phases 1-3 and 5-7 work but phase 4 (implementation)
+[`harness-plan`](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
+skill. Without harness-plan, phases 1-3 and 5-7 work but phase 4 (implementation)
 will block.
 
 **Why not merge the two skills?**
-- harness is useful on its own for pure coding tasks
-- merging would force all harness users to load engineering's 3500-token
+- harness-plan is useful on its own for pure coding tasks
+- merging would force all harness-plan users to load engineering's 3500-token
   lifecycle body on every invocation
 - "Compose, do not embed" is principle #8
 
-**Where harness is expected:**
-- `~/.claude/skills/harness/SKILL.md`, or
-- `~/.claude/plugins/cache/harness/SKILL.md`
+**Where harness-plan is expected:**
+- `~/.claude/skills/harness-plan/SKILL.md`, or
+- any installed plugin providing `harness-plan/skills/harness-plan/SKILL.md`
 
 ---
 
@@ -68,11 +68,11 @@ will block.
 ```bash
 git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude-skill-engineering
 
-# install engineering only (checks for harness, warns if missing):
+# install engineering only (checks for harness-plan, warns if missing):
 ./install.sh
 
-# install engineering + harness from a local harness source:
-./install.sh --with-harness /path/to/harness-skill
+# install engineering + harness-plan from a local source:
+./install.sh --with-harness-plan /path/to/harness-plan-skill
 
 # custom skills directory:
 ./install.sh --prefix /custom/skills/path
@@ -81,8 +81,8 @@ git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude
 ### Option B: Claude Code skill system
 
 If you install `engineering` via Claude's skill manager/marketplace,
-**install `harness` first** via the same mechanism. Engineering's
-`SKILL.md` includes a preflight check that verifies harness is present
+**install `harness-plan` first** via the same mechanism. Engineering's
+`SKILL.md` includes a preflight check that verifies harness-plan is present
 before running `init`.
 
 ---
@@ -99,7 +99,7 @@ before running `init`.
 # 1. create .engineering/ with 7 phase subdirs + seed REQ-001
 # 2. auto-drive: fill discovery → advance → pause at risk gate → await --confirm
 # 3. fill design + architecture in parallel → advance each → pause at arch gate
-# 4. enter implementation → delegate to harness → drive features to done
+# 4. enter implementation → delegate to harness-plan → drive features to done
 # 5. advance implementation (live-executes verification commands)
 # 6. fill test-report → advance (live-executes test commands)
 # 7. create git tag → advance release → pause at release gate
@@ -118,7 +118,7 @@ approval). Everything else auto-advances.
 | 1 | `discovery` | problem statement | `requirements.json` | users ≥3 chars, metrics ≥5 chars, statement ≥20 chars |
 | 2 | `design` | design spec | `design-spec.json` | each flow has ≥2 non-empty steps, components specs ≥10 chars |
 | 3 | `architecture` | ADR + stack | `stack.json` + `adrs/ADR-NNN.json` | ≥1 ADR file, declarations match files |
-| 4 | `implementation` | harness campaign | `campaign-ref.json` | harness done==total, **live-execute** each verification.command |
+| 4 | `implementation` | harness-plan campaign | `campaign-ref.json` | harness-plan done==total, **live-execute** each verification.command |
 | 5 | `test` | test plan | `test-report.json` | ≥1 pass, 0 fail, **live-execute** plan commands |
 | 6 | `release` | release candidate | `release-checklist.json` | git tag is valid ref, no pending checklist items |
 | 7 | `ops` | metrics/incidents | `metrics.json` + `incidents/` + `postmortems/` | minimal |
@@ -153,7 +153,7 @@ harness-engineering/
 ├── README.md                         # this file
 ├── README.zh-CN.md                   # Chinese version
 ├── USAGE.md                          # detailed operational guide
-├── install.sh                        # installer with --with-harness option
+├── install.sh                        # installer with --with-harness-plan option
 ├── scripts/
 │   ├── engineering_lib.py            # shared helpers
 │   ├── engineering_init.py           # create .engineering/

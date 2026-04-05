@@ -103,7 +103,7 @@ stack.json and ≥1 ADR file exist.
 
 ## implementation
 
-**Role:** Delegate to `harness` skill. Do NOT write production code here.
+**Role:** Delegate to `harness-plan` skill. Do NOT write production code here.
 
 **Inputs:**
 - `.engineering/design/design-spec.json`
@@ -112,13 +112,13 @@ stack.json and ≥1 ADR file exist.
 **Output artifact:** `.engineering/implementation/campaign-ref.json`
 
 **Process:**
-1. Derive a harness campaign goal from design + architecture.
-2. Initialize harness at `.engineering/implementation/.harness/`:
-   - invoke harness INIT with `--project-root
+1. Derive a harness-plan campaign goal from design + architecture.
+2. Initialize harness-plan at `.engineering/implementation/.harness/`:
+   - invoke harness-plan INIT with `--project-root
      <project>/.engineering/implementation/`
    - decompose goal into features with real `verification.command` entries
      (tests that actually exist or will exist)
-3. Drive harness through each feature until `done`. Use harness's own scripts
+3. Drive harness-plan through each feature until `done`. Use harness-plan's own scripts
    (`harness_pick_next.py`, `harness_transition.py`, `harness_checkpoint.py`).
 4. After `progress_counts.done == total`:
    - fill campaign-ref.json with campaign_id, harness_root,

@@ -6,7 +6,7 @@ reference later.
 ## Prerequisites
 
 - Python 3.10+
-- `harness` skill installed at `~/.claude/skills/harness/` (for implementation phase)
+- `harness-plan` skill installed at `~/.claude/skills/harness-plan/` (for implementation phase)
 - Optional: `git` (needed only for release phase `tagged_commit` validation)
 
 ## Install
@@ -46,7 +46,7 @@ python3 ~/.claude/skills/engineering/scripts/engineering_status.py \
 ```
 
 Shows which phases are `ready`, `in_progress`, `approved`, `stale`, or `skipped`,
-plus harness progress if implementation has started.
+plus harness-plan progress if implementation has started.
 
 ### 3. Enter a phase
 
@@ -91,7 +91,7 @@ the next phase whose upstream is ready.
 | `discovery` | users and success_metrics have non-trivial content; problem_statement ≥20 chars |
 | `design` | each flow has non-empty steps; each component has spec ≥10 chars |
 | `architecture` | ≥1 ADR file exists; declared ADRs reference real files |
-| `implementation` | harness done == total; baseline not failing; **live-executes** campaign `test_command` + each done feature's `verification.command` |
+| `implementation` | harness-plan done == total; baseline not failing; **live-executes** campaign `test_command` + each done feature's `verification.command` |
 | `test` | ≥1 pass, 0 fails, non-empty evidence; **live-executes** any plan item with a `command` field |
 | `release` | `tagged_commit` is a valid git ref; checklist has no `pending` items |
 
@@ -128,23 +128,23 @@ python3 ~/.claude/skills/engineering/scripts/engineering_reset.py \
 Copies entire `.engineering/` to `.engineering-archive/<name>-<ts>/` and
 removes the live one. Pass `--keep` to archive without deleting.
 
-## Implementation phase: harness integration
+## Implementation phase: harness-plan integration
 
-The implementation phase delegates to the `harness` skill. When you enter
+The implementation phase delegates to the `harness-plan` skill. When you enter
 it, engineering tells you to:
 
 ```bash
-# Initialize harness with engineering's implementation dir as its project-root:
-# (Claude performs this interactively via the `harness` skill)
-# Harness creates .engineering/implementation/.harness/
+# Initialize harness-plan with engineering's implementation dir as its project-root:
+# (Claude performs this interactively via the `harness-plan` skill)
+# Harness-plan creates .engineering/implementation/.harness/
 ```
 
-After harness runs and completes all features (`progress_counts.done == total`):
+After harness-plan runs and completes all features (`progress_counts.done == total`):
 
 1. Fill `.engineering/implementation/campaign-ref.json`:
    - `campaign_id`, `harness_root`, `implements_requirements`
    - `harness_progress: {"done": N, "total": N}`
-2. Run `engineering_advance.py` — it will read harness summary, verify
+2. Run `engineering_advance.py` — it will read harness-plan summary, verify
    completion, live-run verification commands, and approve.
 
 ## Principles recap
@@ -167,7 +167,7 @@ on this project, or `--project-root` points at the wrong path.
 **`Cannot advance — artifact is STALE`** → run the phase script again, update
 the artifact, or use `--refresh-stale` if still valid.
 
-**`Harness features incomplete: 2/3 done`** → go back to harness, finish the
+**`Harness features incomplete: 2/3 done`** → go back to harness-plan, finish the
 remaining features, then re-run advance.
 
 **`stderr contains errors: ERROR: File not found`** → your verification

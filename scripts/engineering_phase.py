@@ -41,10 +41,10 @@ EXECUTOR_BRIEFS = {
         "decision, consequences."
     ),
     "implementation": (
-        "You are the implementation executor. Delegate to the `harness`\n"
+        "You are the implementation executor. Delegate to the `harness-plan`\n"
         "skill with --project-root pointing at .engineering/implementation/.\n"
-        "Derive the harness goal from design+architecture artifacts.\n"
-        "Do NOT implement features directly — harness owns that."
+        "Derive the harness-plan goal from design+architecture artifacts.\n"
+        "Do NOT implement features directly — harness-plan owns that."
     ),
     "test": (
         "You are the test executor. Write test-report.json with a plan\n"
@@ -77,14 +77,14 @@ def implementation_hint(project_root):
     impl_root = engineering_dir(project_root) / "implementation"
     if harness_dir.is_dir():
         return (
-            f"Harness is initialized at {harness_dir}\n"
-            f"To resume: invoke harness scripts with --project-root {impl_root}\n"
-            f"  python3 ~/.claude/skills/harness/scripts/harness_summary.py --project-root {impl_root}"
+            f"Harness-plan is initialized at {harness_dir}\n"
+            f"To resume: invoke harness-plan scripts with --project-root {impl_root}\n"
+            f"  python3 ~/.claude/skills/harness-plan/scripts/harness_summary.py --project-root {impl_root}"
         )
     return (
-        f"Harness not yet initialized.\n"
-        f"Next: invoke harness INIT with --project-root {impl_root}\n"
-        f"  (harness will create {harness_dir})\n"
+        f"Harness-plan not yet initialized.\n"
+        f"Next: invoke harness-plan INIT with --project-root {impl_root}\n"
+        f"  (harness-plan will create {harness_dir})\n"
         f"Derive the campaign goal from the design + architecture artifacts above."
     )
 

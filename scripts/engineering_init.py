@@ -21,19 +21,23 @@ from engineering_lib import (
 
 
 def _check_harness_dependency() -> None:
-    """Warn (don't block) if the harness skill isn't installed.
+    """Warn (don't block) if the harness-plan skill isn't installed.
     engineering's implementation phase delegates to it."""
+    home = Path.home()
     candidates = [
-        Path.home() / ".claude" / "skills" / "harness" / "SKILL.md",
-        Path.home() / ".claude" / "plugins" / "cache" / "harness" / "SKILL.md",
+        home / ".claude" / "skills" / "harness-plan" / "SKILL.md",
     ]
+    # also scan installed plugins for any harness-plan skill
+    plugins_root = home / ".claude" / "plugins"
+    if plugins_root.exists():
+        candidates.extend(plugins_root.glob("**/harness-plan/skills/harness-plan/SKILL.md"))
     if not any(c.exists() for c in candidates):
         print(
-            "⚠  harness skill not found at ~/.claude/skills/harness/.\n"
+            "⚠  harness-plan skill not found at ~/.claude/skills/harness-plan/.\n"
             "   engineering's implementation phase needs it. You can still\n"
             "   run discovery/design/architecture/test/release/ops without it,\n"
             "   but implementation will fail. Install with:\n"
-            "     ./install.sh --with-harness /path/to/harness-skill",
+            "     ./install.sh --with-harness-plan /path/to/harness-plan-skill",
             file=sys.stderr,
         )
 

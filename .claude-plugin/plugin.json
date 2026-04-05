@@ -15,7 +15,7 @@
   ],
   "dependencies": [
     {
-      "name": "harness",
+      "name": "harness-plan",
       "description": "Implementation-phase executor. Required for phase 4 (implementation).",
       "required": true
     }
@@ -24,7 +24,7 @@
     "engineering",
     "lifecycle",
     "orchestrator",
-    "harness",
+    "harness-plan",
     "sdlc",
     "ai-native"
   ]
