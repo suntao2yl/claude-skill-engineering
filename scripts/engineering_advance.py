@@ -14,6 +14,7 @@ Phase-specific hard validation prevents "fill-blank-JSON-and-pass" shortcuts:
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -94,16 +95,11 @@ def _validate_design(root: Path, art: dict) -> list[str]:
         if not spec or len(str(spec).strip()) < 10:
             errors.append(f"component '{cname or i}' spec too short (<10 chars).")
 
-    # Cross-check: implements_requirements should reference real REQ files
+    # Cross-check: implements_requirements should reference the active REQ
     reqs = art.get("implements_requirements", [])
-    discovery_art_path = engineering_dir(root) / "discovery" / "requirements.json"
-    if discovery_art_path.exists():
-        disc = load_json(discovery_art_path, required=False)
-        if disc and disc.get("id") not in reqs and reqs:
-            # at least one REQ ref should match
-            actual = disc.get("id")
-            if actual not in reqs:
-                errors.append(f"implements_requirements {reqs} does not include '{actual}'.")
+    disc = load_active_artifact(root, "discovery")
+    if disc and reqs and disc.get("id") not in reqs:
+        errors.append(f"implements_requirements {reqs} does not include '{disc.get('id')}'.")
 
     return errors
 
@@ -133,8 +129,8 @@ def _validate_implementation(root: Path, art: dict) -> list[str]:
         errors.append("harness_root is empty.")
         return errors
 
-    # Resolve relative to project root
-    harness_path = root / harness_root if not Path(harness_root).is_absolute() else Path(harness_root)
+    # Resolve relative to project root (Path division honors absolute RHS)
+    harness_path = root / harness_root
     summary_path = harness_path / "session-summary.json"
     if not summary_path.exists():
         errors.append(f"No session-summary.json at {summary_path}. Run harness_summary.py first.")
@@ -276,10 +272,6 @@ def _check_expected(expected: str, stdout: str, exit_code: int) -> str | None:
       - "Exit code 0, stdout contains 'SMOKE_OK'"
       - Just a plain string → treated as 'stdout contains <string>'
     Returns error string on mismatch or None on success."""
-    expected_lower = expected.lower()
-
-    # Extract "contains 'X'" patterns
-    import re
     contains_patterns = re.findall(r"contains\s+['\"]([^'\"]+)['\"]", expected, re.IGNORECASE)
     if not contains_patterns:
         # Treat the whole expected string as a substring to find in stdout
@@ -434,10 +426,7 @@ def main() -> int:
             print(f"Cannot advance — {current} phase-specific validation failed:", file=sys.stderr)
             for e in hard_errors:
                 print(f"  ✗ {e}", file=sys.stderr)
-            if args.skip_hard_validation:
-                pass  # unreachable but self-documenting
-            else:
-                print("Pass --skip-hard-validation to bypass (NOT recommended).", file=sys.stderr)
+            print("Pass --skip-hard-validation to bypass (NOT recommended).", file=sys.stderr)
             return 1
         print(f"Hard validation passed for {current}")
 

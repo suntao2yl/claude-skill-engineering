@@ -57,7 +57,7 @@ def main() -> int:
         if art is None:
             errors.append(f"active_unit {p}={unit} but no artifact on disk")
             continue
-        if art.get("id") != unit and unit is not None:
+        if art.get("id") != unit:
             warnings.append(f"active_unit {p}={unit} but artifact.id={art.get('id')}")
         if art.get("status") not in ARTIFACT_STATUS:
             errors.append(f"{p}/{art.get('id')} has invalid status: {art.get('status')}")

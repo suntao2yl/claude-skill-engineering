@@ -63,19 +63,23 @@ def main() -> int:
     for p in PHASES:
         if is_phase_skipped(p, mode):
             status = "skipped"
+            artifact = None
         else:
-            status = phase_status(root, p, mode)
+            artifact = load_active_artifact(root, p)
+            if artifact is not None:
+                status = artifact.get("status") or "draft"
+            else:
+                status = phase_status(root, p, mode)
 
         glyph = STATUS_GLYPH.get(status, "?")
-        artifact = load_active_artifact(root, p)
         aid = lc["active_units"].get(p) or (artifact.get("id") if artifact else "—")
         title = (artifact.get("title") or "") if artifact else ""
         title = truncate_display(title, W_TITLE)
 
         if artifact and status != "approved":
+            fields = required_fields(p, mode)
             missing = artifact_missing_fields(artifact, p, mode)
-            total = len(required_fields(p, mode))
-            progress = f"{total - len(missing)}/{total}"
+            progress = f"{len(fields) - len(missing)}/{len(fields)}"
         else:
             progress = ""
 
