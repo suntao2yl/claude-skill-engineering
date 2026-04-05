@@ -1,5 +1,5 @@
 ---
-name: engineering
+name: harness-engineering
 description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness skill (delegates implementation phase to it). 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts as handoff protocol. Triggers: /engineering, lifecycle, phase, discovery"
 allowed-tools:
   - Read
