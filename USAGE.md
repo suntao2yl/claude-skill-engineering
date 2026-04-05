@@ -1,6 +1,6 @@
 # Usage Guide
 
-How to actually use `engineering` skill on a real project. Read this once,
+How to actually use `harness-engineering` skill on a real project. Read this once,
 reference later.
 
 ## Prerequisites
@@ -12,13 +12,13 @@ reference later.
 ## Install
 
 ```bash
-cp -r harness-engineering ~/.claude/skills/engineering
+cp -r harness-engineering ~/.claude/skills/harness-engineering
 ```
 
 Claude should now recognize `/engineering` as a skill. Verify:
 
 ```bash
-ls ~/.claude/skills/engineering/SKILL.md
+ls ~/.claude/skills/harness-engineering/SKILL.md
 ```
 
 ## First project: walk-through
@@ -26,7 +26,7 @@ ls ~/.claude/skills/engineering/SKILL.md
 ### 1. Initialize lifecycle in your project
 
 ```bash
-python3 ~/.claude/skills/engineering/scripts/engineering_init.py \
+python3 ~/.claude/skills/harness-engineering/scripts/engineering_init.py \
   --project-root /path/to/your/project \
   --goal "One-sentence description of what you're building." \
   --mode standard
@@ -41,7 +41,7 @@ Creates `.engineering/` with 7 phase subdirs and seeds `REQ-001` from your goal.
 ### 2. Check status anytime
 
 ```bash
-python3 ~/.claude/skills/engineering/scripts/engineering_status.py \
+python3 ~/.claude/skills/harness-engineering/scripts/engineering_status.py \
   --project-root /path/to/your/project
 ```
 
@@ -51,7 +51,7 @@ plus harness-plan progress if implementation has started.
 ### 3. Enter a phase
 
 ```bash
-python3 ~/.claude/skills/engineering/scripts/engineering_phase.py \
+python3 ~/.claude/skills/harness-engineering/scripts/engineering_phase.py \
   --project-root /path/to/your/project \
   --phase discovery
 ```
@@ -72,7 +72,7 @@ required fields.
 ### 4. Advance to next phase
 
 ```bash
-python3 ~/.claude/skills/engineering/scripts/engineering_advance.py \
+python3 ~/.claude/skills/harness-engineering/scripts/engineering_advance.py \
   --project-root /path/to/your/project
 ```
 
@@ -109,7 +109,7 @@ failures) and "expected stdout missing" patterns.
 If requirements change mid-project:
 
 ```bash
-python3 ~/.claude/skills/engineering/scripts/engineering_revise.py \
+python3 ~/.claude/skills/harness-engineering/scripts/engineering_revise.py \
   --project-root /path/to/your/project \
   --phase discovery
 ```
@@ -121,7 +121,7 @@ re-approved via `--refresh-stale` or regenerated.
 ### 6. Reset (archive + start fresh)
 
 ```bash
-python3 ~/.claude/skills/engineering/scripts/engineering_reset.py \
+python3 ~/.claude/skills/harness-engineering/scripts/engineering_reset.py \
   --project-root /path/to/your/project
 ```
 
