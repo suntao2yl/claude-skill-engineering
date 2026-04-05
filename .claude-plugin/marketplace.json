@@ -1,17 +1,18 @@
 {
   "name": "harness-engineering-marketplace",
-  "version": "1.0.0",
-  "description": "Marketplace catalog for harness-engineering and related skills.",
   "owner": {
-    "name": "suntao2yl",
-    "url": "https://github.com/suntao2yl"
+    "name": "suntao2yl"
+  },
+  "metadata": {
+    "description": "Marketplace catalog for harness-engineering and related skills.",
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "harness-engineering",
       "description": "Lifecycle orchestrator for AI-native software development. 7 phases with schema-validated JSON artifacts as handoff protocol. Delegates implementation to the harness-plan skill.",
       "version": "0.1.0",
-      "source": ".",
+      "source": "./",
       "homepage": "https://github.com/suntao2yl/claude-skill-engineering",
       "license": "MIT",
       "keywords": [
