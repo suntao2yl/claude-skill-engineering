@@ -1,5 +1,8 @@
 # harness-engineering
 
+[![Release](https://img.shields.io/github/v/release/suntao2yl/claude-skill-engineering)](https://github.com/suntao2yl/claude-skill-engineering/releases)
+[![License](https://img.shields.io/github/license/suntao2yl/claude-skill-engineering)](./LICENSE)
+
 **Lifecycle orchestrator for AI-native software development.**
 
 A top-level Claude Code skill that coordinates the entire software
@@ -63,7 +66,7 @@ will block.
 ### Option A: manual (repo clone)
 
 ```bash
-git clone <this-repo> && cd harness-engineering
+git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude-skill-engineering
 
 # install engineering only (checks for harness, warns if missing):
 ./install.sh
@@ -173,9 +176,11 @@ harness-engineering/
 
 ## Status
 
-**MVP shipped.** Dogfooded end-to-end on two projects:
-- `validation/godot-ai-pet/` — standard 7-phase walkthrough (Godot game)
-- `validation/lc-cli/` — full auto-drive loop with real code + real tests
+**v0.1.0 shipped** — see [release notes](https://github.com/suntao2yl/claude-skill-engineering/releases/tag/v0.1.0).
+
+Dogfooded end-to-end on two projects:
+- `validation/lc-cli/` — real Python CLI, 11 pytest cases, full auto-drive loop
+- `validation/godot-ai-pet/` — Godot 4.3 AI pet companion, standard 7-phase walkthrough
 
 See `docs/` for architecture rationale and open questions.
 
@@ -193,4 +198,4 @@ curated list, particularly:
 
 ## License
 
-TBD — currently unreleased.
+MIT © 2026 — see [LICENSE](./LICENSE).
