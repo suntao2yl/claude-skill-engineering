@@ -12,7 +12,7 @@ reference later.
 ## Install
 
 ```bash
-cp -r harness-engineering ~/.claude/skills/harness-engineering
+cp -r harness-engineering/skills/harness-engineering ~/.claude/skills/harness-engineering
 ```
 
 Claude should now recognize `/harness-engineering` as a skill. Verify:

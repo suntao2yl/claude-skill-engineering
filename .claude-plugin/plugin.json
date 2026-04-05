@@ -1,25 +1,12 @@
 {
   "name": "harness-engineering",
   "version": "0.1.0",
-  "description": "Lifecycle orchestrator for AI-native software development. 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts.",
+  "description": "Lifecycle orchestrator for AI-native software development. 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts. Delegates implementation phase to the harness-plan skill.",
   "author": {
     "name": "suntao2yl"
   },
   "homepage": "https://github.com/suntao2yl/claude-skill-engineering",
   "license": "MIT",
-  "skills": [
-    {
-      "name": "harness-engineering",
-      "path": "SKILL.md"
-    }
-  ],
-  "dependencies": [
-    {
-      "name": "harness-plan",
-      "description": "Implementation-phase executor. Required for phase 4 (implementation).",
-      "required": true
-    }
-  ],
   "keywords": [
     "engineering",
     "lifecycle",

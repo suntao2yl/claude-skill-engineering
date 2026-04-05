@@ -27,6 +27,7 @@ done
 
 # ── paths ─────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_SRC="$SCRIPT_DIR/skills/harness-engineering"
 ENG_DEST="$PREFIX/harness-engineering"
 HARNESS_DEST="$PREFIX/harness-plan"
 
@@ -65,8 +66,7 @@ if [[ ! -d "$ENG_DEST" ]]; then
   run "rsync -a \
         --exclude='validation' --exclude='.engineering*' \
         --exclude='__pycache__' --exclude='.DS_Store' \
-        --exclude='docs' --exclude='.git' --exclude='install.sh' \
-        '$SCRIPT_DIR/' '$ENG_DEST/'"
+        '$SKILL_SRC/' '$ENG_DEST/'"
   say "✓ harness-engineering installed to $ENG_DEST"
 fi
 
