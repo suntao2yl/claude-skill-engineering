@@ -32,7 +32,7 @@ ENG_DEST="$PREFIX/harness-engineering"
 HARNESS_DEST="$PREFIX/harness-plan"
 
 run() {
-  if [[ "$DRY_RUN" == "1" ]]; then
+  if (( DRY_RUN )); then
     echo "[dry-run] $*"
   else
     eval "$@"
@@ -42,26 +42,28 @@ run() {
 say() { printf '%s\n' "$*"; }
 
 say "harness-engineering skill installer"
-say "  source: $SCRIPT_DIR"
+say "  source: $SKILL_SRC"
 say "  prefix: $PREFIX"
 say ""
 
 # ── install harness-engineering ───────────────────────────────
+install_eng=1
 if [[ -d "$ENG_DEST" ]]; then
   say "⚠  $ENG_DEST already exists."
-  if [[ "$DRY_RUN" == "1" ]]; then
+  if (( DRY_RUN )); then
     say "   [dry-run] would prompt to overwrite"
   else
     read -r -p "   Overwrite? [y/N] " ans
     if [[ "$ans" != "y" && "$ans" != "Y" ]]; then
       say "   Skipping harness-engineering install."
+      install_eng=0
     else
       run "rm -rf '$ENG_DEST'"
     fi
   fi
 fi
 
-if [[ ! -d "$ENG_DEST" ]]; then
+if (( install_eng )) && [[ ! -d "$ENG_DEST" ]]; then
   run "mkdir -p '$PREFIX'"
   run "rsync -a \
         --exclude='validation' --exclude='.engineering*' \
@@ -77,7 +79,19 @@ if [[ -n "$HARNESS_SRC" ]]; then
     exit 1
   fi
   if [[ -d "$HARNESS_DEST" ]]; then
-    say "⚠  $HARNESS_DEST already exists, skipping harness-plan copy."
+    say "⚠  $HARNESS_DEST already exists."
+    if (( DRY_RUN )); then
+      say "   [dry-run] would prompt to overwrite"
+    else
+      read -r -p "   Overwrite? [y/N] " ans
+      if [[ "$ans" != "y" && "$ans" != "Y" ]]; then
+        say "   Skipping harness-plan install."
+      else
+        run "rm -rf '$HARNESS_DEST'"
+        run "rsync -a '$HARNESS_SRC/' '$HARNESS_DEST/'"
+        say "✓ harness-plan installed to $HARNESS_DEST"
+      fi
+    fi
   else
     run "rsync -a '$HARNESS_SRC/' '$HARNESS_DEST/'"
     say "✓ harness-plan installed to $HARNESS_DEST"
