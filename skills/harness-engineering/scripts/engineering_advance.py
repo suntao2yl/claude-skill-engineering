@@ -305,9 +305,8 @@ def _execute_command(cmd: str, cwd: Path, label: str, timeout: int = 60,
             cmd, shell=True, capture_output=True, text=True,
             cwd=str(cwd), timeout=timeout,
         )
-        combined = (result.stdout or "") + (result.stderr or "")
         if result.returncode != 0:
-            preview = combined[:300].strip()
+            preview = ((result.stdout or "") + (result.stderr or ""))[:300].strip()
             return f"{label} failed (exit {result.returncode}): {cmd}\n    Output: {preview}"
         stderr_lines = (result.stderr or "").splitlines()
         error_lines = [l for l in stderr_lines if "ERROR:" in l or "FATAL:" in l]

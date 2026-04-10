@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shutil
 import sys
 import time
@@ -36,7 +35,6 @@ def _age_days(path: Path) -> float:
 
 def _scan_stale_artifacts(root: Path, max_age: int) -> list[dict]:
     findings = []
-    eng = engineering_dir(root)
     for p in PHASES:
         pd = phase_dir(root, p)
         for f in pd.glob("*.json"):
@@ -62,8 +60,8 @@ def _scan_stale_artifacts(root: Path, max_age: int) -> list[dict]:
 
 def _scan_old_archives(root: Path, max_age: int) -> list[dict]:
     findings = []
-    eng = engineering_dir(root)
-    for archive_dir in eng.rglob("archive"):
+    for p in PHASES:
+        archive_dir = phase_dir(root, p) / "archive"
         if not archive_dir.is_dir():
             continue
         for f in archive_dir.iterdir():
@@ -101,10 +99,12 @@ def _apply_cleanup(root: Path, findings: list[dict]) -> int:
     moved = 0
     for item in findings:
         src = Path(item["path"])
-        if src.exists():
+        try:
             dest = trash_dir / src.name
             shutil.move(str(src), str(dest))
             moved += 1
+        except FileNotFoundError:
+            pass
     return moved
 
 
