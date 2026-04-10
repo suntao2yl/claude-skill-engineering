@@ -1,9 +1,11 @@
 """Shared library for engineering lifecycle orchestrator scripts."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import unicodedata
+from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -34,6 +36,53 @@ UPSTREAM = {
     "release": ["test"],
     "ops": ["release"],
 }
+
+
+# Loop detection constants
+LOOP_THRESHOLD = 3
+LOOP_WINDOW = 5
+
+
+@dataclass
+class ValidationError:
+    """Structured validation error with actionable fix hint."""
+    code: str
+    message: str
+    fix_hint: str
+    severity: str = "error"  # error | warning
+
+
+def error_signature(errors: list[ValidationError]) -> str:
+    """Hash sorted (code, message) tuples for loop detection."""
+    items = sorted((e.code, e.message) for e in errors)
+    raw = "|".join(f"{c}:{m}" for c, m in items)
+    return hashlib.sha256(raw.encode()).hexdigest()[:12]
+
+
+def record_metrics(project_root: Path, phase: str, metrics_dict: dict) -> None:
+    """Fire-and-forget: append a metrics record to phase_runs.jsonl."""
+    try:
+        metrics_dir = engineering_dir(project_root) / "metrics"
+        metrics_dir.mkdir(parents=True, exist_ok=True)
+        record = {"timestamp": utc_now(), "phase": phase, **metrics_dict}
+        path = metrics_dir / "phase_runs.jsonl"
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception:
+        pass  # fire-and-forget
+
+
+def load_phase_brief(phase: str) -> str:
+    """Load the per-phase brief from resources/briefs/{phase}.md."""
+    skill_dir = Path(__file__).resolve().parent.parent
+    brief_path = skill_dir / "resources" / "briefs" / f"{phase}.md"
+    if brief_path.exists():
+        return brief_path.read_text(encoding="utf-8")
+    # Fallback: try legacy monolithic file
+    legacy = skill_dir / "resources" / "phase-executor-briefs.md"
+    if legacy.exists():
+        return legacy.read_text(encoding="utf-8")
+    return ""
 
 
 def utc_now() -> str:

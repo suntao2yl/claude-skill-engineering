@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from engineering_lib import (
@@ -124,6 +125,21 @@ def main() -> int:
                 f"Harness: {done}/{total} done · {in_prog} in_progress · "
                 f"{blocked} blocked · current: {current_f}"
             )
+
+    # Show basic metrics if available
+    metrics_path = engineering_dir(root) / "metrics" / "phase_runs.jsonl"
+    if metrics_path.exists():
+        try:
+            lines = metrics_path.read_text(encoding="utf-8").strip().splitlines()
+            if lines:
+                records = [json.loads(l) for l in lines[-20:]]  # last 20
+                last = records[-1]
+                total_runs = len(records)
+                avg_ms = sum(r.get("execution_time_ms", 0) for r in records) // max(total_runs, 1)
+                print(f"Metrics: {total_runs} runs · avg {avg_ms}ms · last: {last.get('phase', '?')} exit {last.get('exit_code', '?')}")
+        except Exception:
+            pass  # metrics are best-effort
+
     return 0
 
 

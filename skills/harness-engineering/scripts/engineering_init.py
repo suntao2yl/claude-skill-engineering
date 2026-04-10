@@ -83,6 +83,8 @@ def main() -> int:
     (phase_dir(root, "architecture") / "adrs").mkdir(exist_ok=True)
     (phase_dir(root, "ops") / "incidents").mkdir(exist_ok=True)
     (phase_dir(root, "ops") / "postmortems").mkdir(exist_ok=True)
+    # Metrics directory
+    (eng / "metrics").mkdir(exist_ok=True)
 
     project_name = args.project_name or root.name
     goal = args.goal.strip()

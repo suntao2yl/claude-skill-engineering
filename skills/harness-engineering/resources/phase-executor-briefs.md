@@ -1,5 +1,9 @@
 # Phase Executor Briefs
 
+> **DEPRECATED:** This monolithic file is kept for backward compatibility.
+> Per-phase briefs have moved to `resources/briefs/{phase}.md`.
+> Auto-drive should load individual brief files instead of this file.
+
 Detailed prompt templates for each phase's subagent. The engineering skill's
 auto-drive loop reads these when dispatching work via the `Agent` tool.
 
