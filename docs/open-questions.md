@@ -104,6 +104,12 @@ upfront — some will become obvious once we start building.
 18. **Codex platform compatibility** — Create AGENTS.md (Codex-compatible skill
     definition), generate_agents_md.py converter, platform detection in lib.
     Decision: Codex 适配推迟，先稳定 v0.3.0 核心功能。
+    v0.4.0 具体工作项：
+    - `AGENTS.md` — Codex 格式的 skill 定义（工具名映射：Bash→Execute, Write→Create）
+    - `scripts/generate_agents_md.py` — 从 SKILL.md 自动生成 AGENTS.md
+    - `engineering_lib.py` 增加 `detect_platform()` 和 `platform_tool_name()` 函数
+    - 所有 briefs 中的 Agent/Bash 引用改为平台中性语言
+    - 参考 CE 的 `claude-to-codex.ts` 转换器模式
 
 19. **harness-plan 对应升级** — harness-plan 的接口（campaign-ref.json →
     session-summary.json + features.json）不变，v0.3.0 不需要改动。可选增强：
