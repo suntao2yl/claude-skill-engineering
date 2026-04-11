@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sys
 import unicodedata
 from dataclasses import dataclass, asdict
@@ -65,6 +66,50 @@ REVIEWER_PERSONAS = [
 
 # v0.3.0: Implementation backends
 IMPL_BACKENDS = ["local", "managed_agents"]
+
+
+# ── Platform detection (v0.4.0) ──────────────────────────────
+
+def detect_platform() -> str:
+    """Return 'codex' or 'claude' based on environment signals."""
+    if os.environ.get("CODEX_SKILL_DIR"):
+        return "codex"
+    if os.environ.get("CLAUDE_SKILL_DIR"):
+        return "claude"
+    # Fallback: check if this script lives under ~/.codex/
+    if ".codex" in Path(__file__).resolve().parts:
+        return "codex"
+    return "claude"
+
+
+def skill_home() -> Path:
+    """Return the platform's skill installation directory."""
+    if detect_platform() == "codex":
+        return Path.home() / ".codex" / "skills"
+    return Path.home() / ".claude" / "skills"
+
+
+def harness_plan_skill_dir() -> Path | None:
+    """Locate the harness-plan skill directory across both platform conventions."""
+    home = Path.home()
+    for base in (".codex", ".claude"):
+        # Direct skill install
+        direct = home / base / "skills" / "harness-plan"
+        if (direct / "SKILL.md").exists() or (direct / "AGENTS.md").exists():
+            return direct
+        # Plugin/marketplace install
+        plugins = home / base / "plugins"
+        if plugins.exists():
+            for match in plugins.glob("**/harness-plan/skills/harness-plan"):
+                if (match / "SKILL.md").exists() or (match / "AGENTS.md").exists():
+                    return match
+        # Codex prompts directory
+        prompts = home / base / "prompts"
+        if prompts.exists():
+            for match in prompts.glob("**/harness-plan"):
+                if (match / "AGENTS.md").exists():
+                    return match
+    return None
 
 
 @dataclass
