@@ -63,6 +63,16 @@ Implementation phase delegates to harness-plan skill (see @file resources/briefs
 Loop detection: after validation failure, error signatures are hashed and stored in lifecycle.json.
 If the same signature repeats 3 times consecutively, advance exits 3 and auto-drive stops.
 
+**Decision principles** for auto-decisions (in priority order):
+1. Completeness — finish what you started before starting new work
+2. Boil lakes — do the complete thing when AI makes marginal cost near-zero
+3. Pragmatic — working code over perfect architecture
+4. DRY — extract shared patterns, don't duplicate
+5. Explicit over clever — readable beats clever
+6. Bias toward action — when in doubt, ship it and iterate
+
+Every auto-decision is logged to `.engineering/decisions.jsonl` with phase, classification (mechanical/taste/user_challenge), principle, and rationale.
+
 ## Prerequisites
 **Requires `harness-plan` skill** for implementation phase. Check:
 `test -f ~/.claude/skills/harness-plan/SKILL.md || find ~/.claude/plugins -path '*/harness-plan/skills/harness-plan/SKILL.md' -print -quit | grep -q .`
@@ -81,9 +91,10 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--a
 - `.engineering/lifecycle.json` — master state
 - `.engineering/{phase}/` — per-phase artifacts + archive/
 - `.engineering/metrics/phase_runs.jsonl` — execution metrics (append-only)
+- `.engineering/decisions.jsonl` — decision audit trail (append-only)
 
 ## Known Limitations
 - No concurrency safety (single-writer like git working tree).
-- No schema migration (schema_version mismatch = warning only).
+- Schema auto-migrates v1→v2 on read (backward compatible).
 - Harness-plan progress is read-only inside engineering.
 - Forward transitions only auto-advance; `revise` is explicit.

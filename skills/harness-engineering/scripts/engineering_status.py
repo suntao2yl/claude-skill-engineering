@@ -9,12 +9,13 @@ import sys
 from engineering_lib import (
     PHASES,
     artifact_missing_fields,
-    display_width,
     engineering_dir,
     is_phase_skipped,
     load_active_artifact,
+    load_decisions,
     load_json,
     load_lifecycle,
+    load_managed_session,
     pad_display,
     phase_status,
     project_root_arg,
@@ -126,6 +127,15 @@ def main() -> int:
                 f"{blocked} blocked · current: {current_f}"
             )
 
+    # Managed Agents session if present
+    managed = load_managed_session(root)
+    if managed:
+        ms_status = managed.get("status", "?")
+        ms_done = managed.get("features_completed", 0)
+        ms_total = managed.get("features_total", 0)
+        ms_id = managed.get("session_id", "?")[:12]
+        print(f"Managed Agents: {ms_id} · {ms_status} · {ms_done}/{ms_total} features")
+
     # Show basic metrics if available
     metrics_path = engineering_dir(root) / "metrics" / "phase_runs.jsonl"
     if metrics_path.exists():
@@ -139,6 +149,16 @@ def main() -> int:
                 print(f"Metrics: {total_runs} runs · avg {avg_ms}ms · last: {last.get('phase', '?')} exit {last.get('exit_code', '?')}")
         except Exception:
             pass  # metrics are best-effort
+
+    # Show recent decisions
+    decisions = load_decisions(root, limit=3)
+    if decisions:
+        print(f"Recent decisions ({len(decisions)}):")
+        for d in decisions:
+            cls_tag = d.get("classification", "?")[:5]
+            phase = d.get("phase", "?")
+            rationale = d.get("rationale", "")[:60]
+            print(f"  [{cls_tag}] {phase}: {rationale}")
 
     return 0
 

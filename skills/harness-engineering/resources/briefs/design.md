@@ -28,3 +28,7 @@ completion_signal: "DESIGN_EXECUTOR_DONE DES-XXX"
 - Reference a design_tokens file if one exists at project root; otherwise null.
 
 **Completion signal:** print `DESIGN_EXECUTOR_DONE DES-XXX`.
+
+## Decision Logging
+
+When making non-obvious choices during artifact creation (e.g., choosing between flow structures, component granularity, design patterns), log each as a taste decision to `.engineering/decisions.jsonl` with: phase="design", classification="taste", the applicable principle, rationale, and rejected alternative.

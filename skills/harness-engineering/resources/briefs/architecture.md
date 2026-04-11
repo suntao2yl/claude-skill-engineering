@@ -31,3 +31,7 @@ completion_signal: "ARCHITECTURE_EXECUTOR_DONE ARCH-XXX"
 - `stack` object has free-form keys matching the project domain (engine, language, database, deployment, etc.).
 
 **Completion signal:** print `ARCHITECTURE_EXECUTOR_DONE ARCH-XXX` after stack.json and >=1 ADR file exist.
+
+## Decision Logging
+
+Every ADR is inherently a decision record. Additionally, when making choices not captured in ADRs (e.g., what NOT to write an ADR for, scope of stack object), log to `.engineering/decisions.jsonl` with: phase="architecture", classification="taste", the applicable principle, rationale, and rejected alternative.
