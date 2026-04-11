@@ -85,6 +85,8 @@ def main() -> int:
     (phase_dir(root, "ops") / "postmortems").mkdir(exist_ok=True)
     # Metrics directory
     (eng / "metrics").mkdir(exist_ok=True)
+    # Decisions audit trail
+    (eng / "decisions.jsonl").touch(exist_ok=True)
 
     project_name = args.project_name or root.name
     goal = args.goal.strip()
@@ -99,14 +101,23 @@ def main() -> int:
     # Only seed discovery if discovery is not skipped
     if "discovery" not in MINIMAL_SKIP or args.mode != "minimal":
         req = {
-            "schema_version": 1,
+            "schema_version": 2,
             "id": "REQ-001",
             "title": title,
             "problem_statement": goal,
+            "scope_level": "",
+            "pressure_test": {
+                "is_right_problem": "",
+                "cost_of_inaction": "",
+                "highest_leverage_move": "",
+            },
             "users": [],
             "success_metrics": [],
             "constraints": [],
             "out_of_scope": [],
+            "requirement_groups": [],
+            "success_criteria": [],
+            "success_evaluation": [],
             "status": "draft",
             "created_at": utc_now(),
             "last_updated": utc_now(),
@@ -115,7 +126,7 @@ def main() -> int:
         active_units["discovery"] = "REQ-001"
 
     lifecycle = {
-        "schema_version": 1,
+        "schema_version": 2,
         "project": project_name,
         "goal": goal,
         "mode": args.mode,

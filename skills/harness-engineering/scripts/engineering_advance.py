@@ -26,6 +26,8 @@ from engineering_lib import (
     LOOP_THRESHOLD,
     LOOP_WINDOW,
     PHASES,
+    SCOPE_LEVELS,
+    DecisionRecord,
     ValidationError,
     active_artifact_path,
     artifact_missing_fields,
@@ -35,7 +37,10 @@ from engineering_lib import (
     load_active_artifact,
     load_json,
     load_lifecycle,
+    load_managed_session,
+    log_decision,
     log_transition,
+    get_scope_level,
     phase_status,
     pick_next_phase,
     project_root_arg,
@@ -55,6 +60,45 @@ def _validate_discovery(root: Path, art: dict) -> list[ValidationError]:
     users = art.get("users", [])
     metrics = art.get("success_metrics", [])
     problem = art.get("problem_statement", "").strip()
+
+    # v0.3.0: Scope level validation
+    scope = art.get("scope_level", "")
+    if scope not in SCOPE_LEVELS:
+        errors.append(ValidationError(
+            code="DISC-004", severity="error",
+            message=f"scope_level '{scope}' is not valid. Must be one of: {', '.join(SCOPE_LEVELS)}.",
+            fix_hint="Set artifact.scope_level to 'lightweight', 'standard', or 'deep' based on project complexity.",
+        ))
+
+    # v0.3.0: Pressure test validation
+    pt = art.get("pressure_test", {})
+    if not isinstance(pt, dict):
+        errors.append(ValidationError(
+            code="DISC-005", severity="error",
+            message="pressure_test must be an object with is_right_problem, cost_of_inaction, highest_leverage_move.",
+            fix_hint="Set pressure_test to {is_right_problem: '...', cost_of_inaction: '...', highest_leverage_move: '...'}.",
+        ))
+    else:
+        for key in ("is_right_problem", "cost_of_inaction", "highest_leverage_move"):
+            val = pt.get(key, "").strip() if isinstance(pt.get(key), str) else ""
+            if len(val) < 10:
+                errors.append(ValidationError(
+                    code="DISC-005", severity="error",
+                    message=f"pressure_test.{key} too short ({len(val)} chars). Need >=10.",
+                    fix_hint=f"Expand pressure_test.{key} to >=10 chars with a substantive answer to the challenge question.",
+                ))
+
+    # v0.3.0: Requirement groups validation (optional but if present, must be well-formed)
+    groups = art.get("requirement_groups", [])
+    for i, g in enumerate(groups):
+        if isinstance(g, dict):
+            topic = g.get("topic", "").strip() if isinstance(g.get("topic"), str) else ""
+            if not topic:
+                errors.append(ValidationError(
+                    code="DISC-006", severity="error",
+                    message=f"requirement_groups[{i}] has empty topic.",
+                    fix_hint=f"Set requirement_groups[{i}].topic to a descriptive group name.",
+                ))
 
     trivial_users = [u for u in users if not isinstance(u, str) or len(u.strip()) < 3]
     if trivial_users:
@@ -173,6 +217,35 @@ def _validate_architecture(root: Path, art: dict) -> list[ValidationError]:
 
 def _validate_implementation(root: Path, art: dict) -> list[ValidationError]:
     errors = []
+    backend = art.get("backend", "local")
+
+    # v0.3.0: Managed Agents backend validation
+    if backend == "managed_agents":
+        session = load_managed_session(root)
+        if session is None:
+            errors.append(ValidationError(
+                code="IMPL-MA-001", severity="error",
+                message="backend is 'managed_agents' but no managed-session.json found.",
+                fix_hint="Create managed-session.json via engineering_managed.py --create.",
+            ))
+            return errors
+        if session.get("status") not in ("completed",):
+            errors.append(ValidationError(
+                code="IMPL-MA-003", severity="error",
+                message=f"Managed session status is '{session.get('status')}', expected 'completed'.",
+                fix_hint="Wait for the managed session to complete or check for failures.",
+            ))
+        done = session.get("features_completed", 0)
+        total = session.get("features_total", 0)
+        if total > 0 and done < total:
+            errors.append(ValidationError(
+                code="IMPL-MA-002", severity="error",
+                message=f"Managed session features incomplete: {done}/{total}.",
+                fix_hint="Complete all features in the managed session.",
+            ))
+        return errors
+
+    # Local harness-plan backend (default)
     harness_root = art.get("harness_root", "")
     if not harness_root:
         errors.append(ValidationError(
@@ -392,6 +465,25 @@ def _validate_test(root: Path, art: dict) -> list[ValidationError]:
                 code="TEST-005", severity="error", message=result,
                 fix_hint=f"Fix test '{name}' so its command passes.",
             ))
+
+    # v0.3.0: Multi-persona review validation (standard/deep scope)
+    scope = get_scope_level(root)
+    if scope in ("standard", "deep"):
+        personas = art.get("review_personas", [])
+        if not personas:
+            errors.append(ValidationError(
+                code="TEST-006", severity="error",
+                message=f"Multi-persona review required for {scope} scope but review_personas is empty.",
+                fix_hint="Spawn reviewer sub-agents (security, performance, testing, maintainability) and record findings in review_personas array.",
+            ))
+        else:
+            for p in personas:
+                if p.get("verdict") == "block":
+                    errors.append(ValidationError(
+                        code="TEST-007", severity="error",
+                        message=f"Reviewer persona '{p.get('persona', '?')}' has blocking verdict.",
+                        fix_hint=f"Address blocking findings from '{p.get('persona', '?')}' reviewer before advancing.",
+                    ))
     return errors
 
 
@@ -438,6 +530,83 @@ def _validate_release(root: Path, art: dict) -> list[ValidationError]:
             message=f"Release checklist has {len(pending)} pending item(s): {', '.join(pending[:3])}",
             fix_hint="Complete all checklist items (set status to 'done' or 'skipped').",
         ))
+
+    # v0.3.0: Executable release automation validation
+    automation = art.get("release_automation", [])
+    for step in automation:
+        if not isinstance(step, dict):
+            continue
+        cmd = step.get("command", "")
+        step_name = step.get("step", "unnamed")
+        if not cmd:
+            continue
+        result = _execute_command(cmd, root, label=f"release automation '{step_name}'")
+        if result:
+            errors.append(ValidationError(
+                code="REL-006", severity="error", message=result,
+                fix_hint=f"Fix release automation step '{step_name}' so its command passes.",
+            ))
+    return errors
+
+
+def _validate_ops(root: Path, art: dict) -> list[ValidationError]:
+    """v0.3.0: Validate ops phase — learnings required for standard/deep scope."""
+    errors = []
+    scope = get_scope_level(root)
+
+    if scope in ("standard", "deep"):
+        learnings = art.get("learnings", [])
+        if not learnings:
+            errors.append(ValidationError(
+                code="OPS-001", severity="error",
+                message="No learnings recorded. Extract 3-5 learnings from the lifecycle.",
+                fix_hint="Add learnings array with {category, insight, evidence, applicable_to} objects.",
+            ))
+        else:
+            for i, l in enumerate(learnings):
+                if not isinstance(l, dict):
+                    continue
+                for field in ("category", "insight", "evidence", "applicable_to"):
+                    val = l.get(field, "")
+                    if not val or (isinstance(val, str) and len(val.strip()) < 3):
+                        errors.append(ValidationError(
+                            code="OPS-002", severity="error",
+                            message=f"learnings[{i}].{field} is missing or too short.",
+                            fix_hint=f"Fill learnings[{i}].{field} with substantive content.",
+                        ))
+    return errors
+
+
+def _validate_success_criteria(phase: str, art: dict) -> list[ValidationError]:
+    """Generic success criteria validation: if criteria defined, evaluation must exist."""
+    errors = []
+    criteria = art.get("success_criteria", [])
+    if not criteria:
+        return errors  # no criteria defined = no validation needed
+    evaluation = art.get("success_evaluation", [])
+    if not evaluation:
+        errors.append(ValidationError(
+            code=f"{phase.upper()[:4]}-SC-001", severity="error",
+            message=f"success_criteria defined ({len(criteria)} items) but success_evaluation is empty.",
+            fix_hint="Self-evaluate each success criterion and populate success_evaluation array with {criterion, met, evidence}.",
+        ))
+        return errors
+    eval_criteria = {e.get("criterion", "") for e in evaluation if isinstance(e, dict)}
+    for c in criteria:
+        if c not in eval_criteria:
+            errors.append(ValidationError(
+                code=f"{phase.upper()[:4]}-SC-002", severity="error",
+                message=f"Success criterion '{c[:50]}' has no matching evaluation entry.",
+                fix_hint=f"Add a success_evaluation entry for criterion '{c[:50]}' with met (bool) and evidence.",
+            ))
+    unmet = [e for e in evaluation if isinstance(e, dict) and not e.get("met", False)]
+    if unmet:
+        names = [e.get("criterion", "?")[:40] for e in unmet]
+        errors.append(ValidationError(
+            code=f"{phase.upper()[:4]}-SC-003", severity="warning",
+            message=f"{len(unmet)} success criterion/criteria not met: {', '.join(names)}",
+            fix_hint="Address unmet criteria or document why they are acceptable.",
+        ))
     return errors
 
 
@@ -449,6 +618,7 @@ PHASE_VALIDATORS = {
     "implementation": _validate_implementation,
     "test": _validate_test,
     "release": _validate_release,
+    "ops": _validate_ops,
 }
 
 
@@ -520,6 +690,11 @@ def main() -> int:
             exit_code = 1
             return exit_code
 
+        log_decision(root, DecisionRecord(
+            phase=current, classification="mechanical", principle="completeness",
+            rationale=f"All required fields present for {current}",
+        ))
+
         # Gate 2: Stale check
         if art.get("status") == "stale" and not args.refresh_stale:
             print(f"Cannot advance — {current} artifact is STALE (upstream was revised).", file=sys.stderr)
@@ -556,6 +731,21 @@ def main() -> int:
                 return exit_code
             print(f"Hard validation passed for {current}")
 
+        # Gate 3b: Success criteria self-evaluation (v0.3.0)
+        sc_errors = _validate_success_criteria(current, art)
+        sc_hard = [e for e in sc_errors if e.severity == "error"]
+        sc_warn = [e for e in sc_errors if e.severity == "warning"]
+        if sc_warn:
+            for w in sc_warn:
+                print(f"  ⚠ {w.message}", file=sys.stderr)
+        if sc_hard:
+            print(f"Cannot advance — {current} success criteria validation failed:", file=sys.stderr)
+            for e in sc_hard:
+                print(f"  ✗ {e.message}", file=sys.stderr)
+                print(f"    → Fix: {e.fix_hint}", file=sys.stderr)
+            exit_code = 1
+            return exit_code
+
         # Gate 4: Risk gate
         gate_key = f"{current}.approved"
         risk_gates = lc.get("risk_gates", [])
@@ -563,6 +753,11 @@ def main() -> int:
             print(f"⏸  RISK GATE: approving {current} requires --confirm", file=sys.stderr)
             print(f"   Artifact passed all validation. Downstream will commit to it.", file=sys.stderr)
             print(f"   Review {active_artifact_path(root, current)} then re-run with --confirm.", file=sys.stderr)
+            log_decision(root, DecisionRecord(
+                phase=current, classification="user_challenge", principle="none",
+                rationale=f"Risk gate {gate_key} requires user confirmation before downstream commits",
+                auto=False,
+            ))
             exit_code = 42
             return exit_code
 
@@ -571,6 +766,11 @@ def main() -> int:
         art["last_updated"] = utc_now()
         save_json(active_artifact_path(root, current), art)
         print(f"Approved {current} · {art.get('id')}")
+
+        log_decision(root, DecisionRecord(
+            phase=current, classification="mechanical", principle="bias_toward_action",
+            rationale=f"Phase {current} passed all gates, approved artifact {art.get('id')}",
+        ))
 
         # Clear loop detection on success
         _clear_loop_signatures(lc)

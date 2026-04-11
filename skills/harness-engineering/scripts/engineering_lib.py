@@ -42,6 +42,41 @@ UPSTREAM = {
 LOOP_THRESHOLD = 3
 LOOP_WINDOW = 5
 
+# v0.3.0: Scope levels for graduated ceremony (from CE brainstorm)
+SCOPE_LEVELS = ["lightweight", "standard", "deep"]
+
+# v0.3.0: Decision principles for auto-drive (from gstack autoplan)
+DECISION_PRINCIPLES = [
+    "completeness",          # finish what you started before starting new work
+    "boil_lakes",            # do the complete thing when AI makes marginal cost near-zero
+    "pragmatic",             # working code over perfect architecture
+    "dry",                   # extract shared patterns, don't duplicate
+    "explicit_over_clever",  # readable beats clever
+    "bias_toward_action",    # when in doubt, ship it and iterate
+]
+
+# v0.3.0: Reviewer personas for multi-persona test review (from CE review)
+REVIEWER_PERSONAS = [
+    {"role": "security", "focus": "auth, injection, data exposure, secrets, input validation"},
+    {"role": "performance", "focus": "latency, memory, N+1 queries, caching, algorithmic complexity"},
+    {"role": "testing", "focus": "coverage gaps, edge cases, flaky tests, missing error paths"},
+    {"role": "maintainability", "focus": "coupling, naming, documentation, complexity, dead code"},
+]
+
+# v0.3.0: Implementation backends
+IMPL_BACKENDS = ["local", "managed_agents"]
+
+
+@dataclass
+class ManagedAgentSession:
+    """Tracks a Managed Agents session for the implementation phase."""
+    session_id: str
+    status: str = "pending"  # pending | running | completed | failed | checkpointed
+    started_at: str = ""
+    last_checkpoint: str = ""
+    features_completed: int = 0
+    features_total: int = 0
+
 
 @dataclass
 class ValidationError:
@@ -52,6 +87,18 @@ class ValidationError:
     severity: str = "error"  # error | warning
 
 
+@dataclass
+class DecisionRecord:
+    """Audit trail entry for auto-drive and executor decisions."""
+    phase: str
+    classification: str  # mechanical | taste | user_challenge
+    principle: str       # which DECISION_PRINCIPLES entry applied (or "none")
+    rationale: str
+    rejected_alternative: str = ""
+    auto: bool = True    # True if auto-drive made it, False if user
+    timestamp: str = ""  # filled by log_decision if empty
+
+
 def error_signature(errors: list[ValidationError]) -> str:
     """Hash sorted (code, message) tuples for loop detection."""
     items = sorted((e.code, e.message) for e in errors)
@@ -59,17 +106,64 @@ def error_signature(errors: list[ValidationError]) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:12]
 
 
-def record_metrics(project_root: Path, phase: str, metrics_dict: dict) -> None:
-    """Fire-and-forget: append a metrics record to phase_runs.jsonl."""
+def _append_jsonl(path: Path, record: dict) -> None:
+    """Fire-and-forget: append one JSON record to a .jsonl file."""
     try:
-        metrics_dir = engineering_dir(project_root) / "metrics"
-        metrics_dir.mkdir(parents=True, exist_ok=True)
-        record = {"timestamp": utc_now(), "phase": phase, **metrics_dict}
-        path = metrics_dir / "phase_runs.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
     except Exception:
-        pass  # fire-and-forget
+        pass
+
+
+def record_metrics(project_root: Path, phase: str, metrics_dict: dict) -> None:
+    """Fire-and-forget: append a metrics record to phase_runs.jsonl."""
+    path = engineering_dir(project_root) / "metrics" / "phase_runs.jsonl"
+    _append_jsonl(path, {"timestamp": utc_now(), "phase": phase, **metrics_dict})
+
+
+def log_decision(project_root: Path, record: DecisionRecord) -> None:
+    """Append a decision record to .engineering/decisions.jsonl."""
+    if not record.timestamp:
+        record.timestamp = utc_now()
+    path = engineering_dir(project_root) / "decisions.jsonl"
+    _append_jsonl(path, asdict(record))
+
+
+def load_decisions(project_root: Path, phase: str | None = None, limit: int = 20) -> list[dict]:
+    """Read recent decisions from decisions.jsonl, optionally filtered by phase."""
+    path = engineering_dir(project_root) / "decisions.jsonl"
+    if not path.exists():
+        return []
+    records = []
+    try:
+        for line in path.read_text(encoding="utf-8").strip().splitlines():
+            if line.strip():
+                records.append(json.loads(line))
+    except Exception:
+        return []
+    if phase:
+        records = [r for r in records if r.get("phase") == phase]
+    return records[-limit:]
+
+
+def load_managed_session(project_root: Path) -> dict | None:
+    """Load Managed Agents session state from implementation phase."""
+    path = engineering_dir(project_root) / "implementation" / "managed-session.json"
+    return load_json(path, required=False)
+
+
+def save_managed_session(project_root: Path, session: ManagedAgentSession | dict) -> None:
+    """Save Managed Agents session state."""
+    path = engineering_dir(project_root) / "implementation" / "managed-session.json"
+    data = asdict(session) if isinstance(session, ManagedAgentSession) else session
+    save_json(path, data)
+
+
+def get_scope_level(project_root: Path) -> str:
+    """Read scope_level from discovery artifact, defaulting to 'standard'."""
+    disc = load_active_artifact(project_root, "discovery")
+    return disc.get("scope_level", "standard") if disc else "standard"
 
 
 def load_phase_brief(phase: str) -> str:
@@ -147,8 +241,30 @@ def phase_dir(project_root: Path, phase: str) -> Path:
     return engineering_dir(project_root) / phase
 
 
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 _schema_warned: set = set()
+
+
+def _migrate_v1_to_v2(data: dict) -> dict:
+    """Non-destructive migration: adds v2 fields with safe defaults.
+    Runs on read, not on write. Existing .engineering/ dirs continue to work."""
+    if data.get("schema_version", 1) >= 2:
+        return data
+    # Discovery artifacts (detected by presence of problem_statement)
+    if "problem_statement" in data:
+        data.setdefault("scope_level", "")
+        data.setdefault("pressure_test", {
+            "is_right_problem": "",
+            "cost_of_inaction": "",
+            "highest_leverage_move": "",
+        })
+        data.setdefault("requirement_groups", [])
+    # All artifacts: success criteria (Inc 3 prep)
+    if "id" in data and "status" in data:
+        data.setdefault("success_criteria", [])
+        data.setdefault("success_evaluation", [])
+    data["schema_version"] = 2
+    return data
 
 
 def load_json(path: Path, required: bool = True) -> Optional[Any]:
@@ -158,17 +274,26 @@ def load_json(path: Path, required: bool = True) -> Optional[Any]:
         return None
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
-    # Warn once per file on schema version mismatch
+    # Warn once per file on schema version mismatch, then auto-migrate
     if isinstance(data, dict):
         sv = data.get("schema_version")
-        if sv is not None and sv != CURRENT_SCHEMA_VERSION:
+        if sv is not None and sv < CURRENT_SCHEMA_VERSION:
+            key = str(path)
+            if key not in _schema_warned:
+                _schema_warned.add(key)
+                print(
+                    f"Migrating {path.name} schema v{sv} → v{CURRENT_SCHEMA_VERSION}",
+                    file=sys.stderr,
+                )
+            data = _migrate_v1_to_v2(data)
+        elif sv is not None and sv > CURRENT_SCHEMA_VERSION:
             key = str(path)
             if key not in _schema_warned:
                 _schema_warned.add(key)
                 print(
                     f"WARNING: {path.name} schema_version={sv} "
                     f"(expected {CURRENT_SCHEMA_VERSION}). "
-                    f"Migration may be required.",
+                    f"Newer version — some fields may be unknown.",
                     file=sys.stderr,
                 )
     return data
@@ -217,7 +342,7 @@ def required_fields(phase: str, mode: str = "standard") -> list[str]:
     """Minimum required fields for a phase's active artifact to be 'approved'.
     In minimal mode, implementation/test drop references to skipped phases."""
     base = {
-        "discovery": ["id", "title", "problem_statement", "users", "success_metrics"],
+        "discovery": ["id", "title", "problem_statement", "users", "success_metrics", "scope_level", "pressure_test"],
         "design": ["id", "implements_requirements", "flows"],
         "architecture": ["id", "stack", "adrs"],
         "implementation": ["campaign_id", "harness_root", "implements_requirements"],
