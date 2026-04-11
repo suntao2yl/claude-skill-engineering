@@ -23,7 +23,10 @@ import os
 import re
 import shutil
 import sys
-import yaml
+try:
+    import yaml
+except ImportError:
+    sys.exit("generate_codex.py requires PyYAML: pip install pyyaml")
 from pathlib import Path
 
 # ── Tool name mapping ────────────────────────────────────────
@@ -31,8 +34,6 @@ from pathlib import Path
 TOOL_MAP = {
     "Bash": "Execute",
     "Write": "Create",
-    "Read": "Read",
-    "Edit": "Edit",
     "Glob": None,
     "Grep": None,
     "Agent": None,
@@ -42,18 +43,6 @@ TOOL_MAP = {
     "TaskGet": None,
     "EnterPlanMode": None,
     "AskUserQuestion": "request_user_input",
-}
-
-# Tools with no Codex equivalent get prose replacements
-TOOL_PROSE = {
-    "Glob": "Use `Execute` with `find` to search for files by pattern.",
-    "Grep": "Use `Execute` with `grep` or `rg` to search file contents.",
-    "Agent": "Execute sub-tasks sequentially in the current session.",
-    "TaskCreate": "Track progress using structured prose notes.",
-    "TaskUpdate": "Update progress tracking in prose.",
-    "TaskList": "Review current task status.",
-    "TaskGet": "Check task details.",
-    "EnterPlanMode": "",  # silently removed
 }
 
 DESCRIPTION_MAX = 1024
@@ -88,14 +77,8 @@ def transform_frontmatter(fm: dict) -> str:
         out["description"] = desc
     if not out:
         return ""
-    lines = ["---"]
-    for k, v in out.items():
-        if isinstance(v, str) and (":" in v or "\n" in v):
-            lines.append(f'{k}: "{v}"')
-        else:
-            lines.append(f"{k}: {v}")
-    lines.append("---")
-    return "\n".join(lines) + "\n"
+    body = yaml.dump(out, default_flow_style=False, allow_unicode=True, sort_keys=False).rstrip()
+    return f"---\n{body}\n---\n"
 
 
 # ── Body transforms ─────────────────────────────────────────
@@ -158,8 +141,6 @@ def replace_tool_names(text: str) -> str:
         'sequential sub-task execution',
         text,
     )
-    # AskUserQuestion -> request_user_input
-    text = text.replace("AskUserQuestion", "request_user_input")
     return text
 
 

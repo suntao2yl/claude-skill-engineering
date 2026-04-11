@@ -90,9 +90,12 @@ def skill_home() -> Path:
 
 
 def harness_plan_skill_dir() -> Path | None:
-    """Locate the harness-plan skill directory across both platform conventions."""
+    """Locate the harness-plan skill directory across both platform conventions.
+    Checks current platform first, then falls back to the other."""
     home = Path.home()
-    for base in (".codex", ".claude"):
+    platform = detect_platform()
+    bases = [".codex", ".claude"] if platform == "codex" else [".claude", ".codex"]
+    for base in bases:
         # Direct skill install
         direct = home / base / "skills" / "harness-plan"
         if (direct / "SKILL.md").exists() or (direct / "AGENTS.md").exists():
