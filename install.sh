@@ -13,11 +13,13 @@ set -euo pipefail
 PREFIX="${HOME}/.claude/skills"
 HARNESS_SRC=""
 DRY_RUN=0
+CODEX_MODE=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --prefix) PREFIX="$2"; shift 2 ;;
     --with-harness-plan) HARNESS_SRC="$2"; shift 2 ;;
+    --codex) CODEX_MODE=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     -h|--help)
       sed -n '2,9p' "$0"; exit 0 ;;
@@ -116,3 +118,33 @@ else
 fi
 
 say "Done."
+
+# ── Codex install (optional) ─────────────────────────────────
+if (( CODEX_MODE )); then
+  say ""
+  say "── Codex mode ──"
+  CODEX_PREFIX="${HOME}/.codex/skills"
+  CONVERTER="$SCRIPT_DIR/codex/generate_codex.py"
+
+  if [[ ! -f "$CONVERTER" ]]; then
+    say "✗ Codex converter not found at $CONVERTER" >&2
+    exit 1
+  fi
+
+  CODEX_ARGS=(
+    --engineering-src "$SKILL_SRC"
+    --output-dir "$CODEX_PREFIX"
+    --symlink-scripts
+  )
+  if [[ -n "$HARNESS_SRC" && -d "$HARNESS_SRC" ]]; then
+    CODEX_ARGS+=(--plan-src "$HARNESS_SRC")
+  elif [[ -d "$HARNESS_DEST" ]]; then
+    CODEX_ARGS+=(--plan-src "$HARNESS_DEST")
+  fi
+
+  if (( DRY_RUN )); then
+    run "python3 '$CONVERTER' ${CODEX_ARGS[*]} --dry-run"
+  else
+    run "python3 '$CONVERTER' ${CODEX_ARGS[*]}"
+  fi
+fi
