@@ -3,13 +3,13 @@ phase: ops
 context_budget:
   max_input_tokens: 3000
   truncation_strategy: none
-role: Ops/SRE
+role: Ops/SRE + Knowledge Engineer
 completion_signal: "OPS_EXECUTOR_DONE OPS-XXX"
 ---
 
 # Ops Phase Brief
 
-**Role:** Ops/SRE. Record metrics, incidents, postmortems.
+**Role:** Ops/SRE and knowledge engineer. Record metrics, incidents, and extract learnings.
 
 **Inputs:** `.engineering/release/release-checklist.json`
 
@@ -20,10 +20,46 @@ completion_signal: "OPS_EXECUTOR_DONE OPS-XXX"
 
 **Required fields in metrics.json:**
 - `id` (OPS-001)
+- `learnings` (required for standard/deep scope)
 
-**Judgment rules:**
-- Initial ops artifact can be skeletal — just the metrics to watch.
-- Incidents and postmortems get added post-release as reality happens.
-- `metrics_tracked` array has entries of `{name, target, source}`.
+## Step 1: Metrics
+
+`metrics_tracked` array has entries of `{name, target, source}`.
+Initial ops artifact can be skeletal — just the metrics to watch.
+
+## Step 2: Incidents & Postmortems
+
+Incidents and postmortems get added post-release as reality happens.
+
+## Step 3: Knowledge Compounding (v0.3.0)
+
+Extract 3-5 structured learnings from the entire lifecycle. This is the knowledge compounding step — learnings from this cycle inform future cycles.
+
+Each learning must have:
+```json
+{
+  "category": "process|technical|tooling|communication",
+  "insight": "What was learned",
+  "evidence": "Specific reference (decision ID, error code, metric, phase)",
+  "applicable_to": "When this learning applies in future projects"
+}
+```
+
+**Categories:**
+- `process` — workflow improvements, phase ordering, ceremony calibration
+- `technical` — code patterns, architecture decisions, performance findings
+- `tooling` — tool configuration, script improvements, integration lessons
+- `communication` — requirement clarity, handoff quality, review effectiveness
+
+**Evidence must be specific:** Reference decision IDs from decisions.jsonl, error codes from advance failures, metrics from phase_runs.jsonl, or specific artifact fields.
+
+**Applicable_to must be actionable:** "When building CLI tools" is good. "In general" is not.
+
+Future discovery phases can retrieve prior learnings via:
+`python3 engineering_learn.py --project-root <path>`
 
 **Completion signal:** print `OPS_EXECUTOR_DONE OPS-XXX`.
+
+## Decision Logging
+
+Log metric selection rationale and incident triage decisions to `.engineering/decisions.jsonl` with: phase="ops", classification and principle as appropriate.
