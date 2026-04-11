@@ -1,6 +1,6 @@
 {
   "name": "harness-engineering",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Lifecycle orchestrator for AI-native software development. 7 phases (discovery→design→architecture→implementation→test→release→ops) with schema-validated JSON artifacts. Delegates implementation phase to the harness-plan skill.",
   "author": {
     "name": "suntao2yl"

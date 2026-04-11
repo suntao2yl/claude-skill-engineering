@@ -93,3 +93,21 @@ upfront — some will become obvious once we start building.
 16. **Team mode** — multiple humans working on different phases concurrently.
 17. **Multi-project workspaces** — one `harness-engineering` session
     managing several related projects.
+
+## Resolved in v0.3.0
+
+5. **Schema versioning** — Resolved: `load_json()` auto-migrates v1→v2 on read
+   via `_migrate_v1_to_v2()`. Non-destructive, adds default empty fields.
+
+## Deferred to v0.4.0
+
+18. **Codex platform compatibility** — Create AGENTS.md (Codex-compatible skill
+    definition), generate_agents_md.py converter, platform detection in lib.
+    Decision: Codex 适配推迟，先稳定 v0.3.0 核心功能。
+
+19. **harness-plan 对应升级** — harness-plan 的接口（campaign-ref.json →
+    session-summary.json + features.json）不变，v0.3.0 不需要改动。可选增强：
+    - 给 harness-plan 加 `.harness/decisions.jsonl` 决策记录
+    - 给 features.json 加 per-feature `success_criteria`
+    - 让 harness-plan 的 reviewer-calibration.md 支持多人格审查
+    这些不阻塞 v0.3.0 发布，可在 harness-plan 自己的版本迭代中实现。
