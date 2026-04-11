@@ -11,6 +11,7 @@ from engineering_lib import (
     PHASES,
     active_artifact_path,
     engineering_dir,
+    harness_plan_skill_dir,
     log_transition,
     phase_dir,
     project_root_arg,
@@ -23,21 +24,13 @@ from engineering_lib import (
 def _check_harness_dependency() -> None:
     """Warn (don't block) if the harness-plan skill isn't installed.
     engineering's implementation phase delegates to it."""
-    home = Path.home()
-    candidates = [
-        home / ".claude" / "skills" / "harness-plan" / "SKILL.md",
-    ]
-    # also scan installed plugins for any harness-plan skill
-    plugins_root = home / ".claude" / "plugins"
-    if plugins_root.exists():
-        candidates.extend(plugins_root.glob("**/harness-plan/skills/harness-plan/SKILL.md"))
-    if not any(c.exists() for c in candidates):
+    found = harness_plan_skill_dir()
+    if not found:
         print(
-            "⚠  harness-plan skill not found at ~/.claude/skills/harness-plan/.\n"
+            "⚠  harness-plan skill not found.\n"
             "   engineering's implementation phase needs it. You can still\n"
             "   run discovery/design/architecture/test/release/ops without it,\n"
-            "   but implementation will fail. Install with:\n"
-            "     ./install.sh --with-harness-plan /path/to/harness-plan-skill",
+            "   but implementation will fail.",
             file=sys.stderr,
         )
 

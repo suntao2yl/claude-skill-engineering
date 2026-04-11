@@ -11,6 +11,7 @@ from engineering_lib import (
     active_artifact_path,
     artifact_missing_fields,
     engineering_dir,
+    harness_plan_skill_dir,
     is_phase_skipped,
     load_active_artifact,
     load_lifecycle,
@@ -75,11 +76,13 @@ def upstream_summary_line(project_root, up_phase):
 def implementation_hint(project_root):
     harness_dir = engineering_dir(project_root) / "implementation" / ".harness"
     impl_root = engineering_dir(project_root) / "implementation"
+    hp_dir = harness_plan_skill_dir()
     if harness_dir.is_dir():
+        summary_cmd = f"python3 {hp_dir}/scripts/harness_summary.py" if hp_dir else "harness_summary.py"
         return (
             f"Harness-plan is initialized at {harness_dir}\n"
             f"To resume: invoke harness-plan scripts with --project-root {impl_root}\n"
-            f"  python3 ~/.claude/skills/harness-plan/scripts/harness_summary.py --project-root {impl_root}"
+            f"  {summary_cmd} --project-root {impl_root}"
         )
     return (
         f"Harness-plan not yet initialized.\n"
