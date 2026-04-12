@@ -57,13 +57,42 @@ will block.
 
 **Where harness-plan is expected:**
 - `~/.claude/skills/harness-plan/SKILL.md`, or
+- `~/.codex/skills/harness-plan/SKILL.md`, or
 - any installed plugin providing `harness-plan/skills/harness-plan/SKILL.md`
 
 ---
 
 ## Install
 
-### Option A: manual (repo clone)
+### Option A: Claude Code
+
+Install `harness-plan` first, then `harness-engineering`:
+
+```bash
+/plugin marketplace add suntao2yl/claude-skill-harness
+/plugin install harness-plan@suntao-skills
+
+/plugin marketplace add suntao2yl/claude-skill-engineering
+/plugin install harness-engineering@harness-engineering-marketplace
+```
+
+### Option B: Codex
+
+Install `harness-plan` first, then `harness-engineering`:
+
+```bash
+python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo suntao2yl/claude-skill-harness \
+  --path plugins/harness-plan/skills/harness-plan
+
+python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo suntao2yl/claude-skill-engineering \
+  --path skills/harness-engineering
+```
+
+Restart Codex after installation so both skills appear in the skill list.
+
+### Option C: manual (repo clone)
 
 ```bash
 git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude-skill-engineering
@@ -77,15 +106,6 @@ git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude
 # custom skills directory:
 ./install.sh --prefix /custom/skills/path
 ```
-
-### Option B: Claude Code skill system
-
-If you install `engineering` via Claude's skill manager/marketplace,
-**install `harness-plan` first** via the same mechanism. Engineering's
-`SKILL.md` includes a preflight check that verifies harness-plan is present
-before running `init`.
-
----
 
 ## Quick start
 
