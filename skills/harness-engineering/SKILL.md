@@ -53,7 +53,7 @@ The whole point is unmanned lifecycle execution. On init or resume, enter loop:
 ```
 while true:
   lc = read lifecycle.json; current = lc.current_phase
-  if "All phases complete" in prior output: report + exit
+  if "All phases complete" in prior output: run engineering_lint.py, report findings + exit
   read @file resources/briefs/{current}.md for executor brief
   dispatch Agent(subagent_type="general-purpose", prompt=composed_prompt)
   run engineering_advance.py --project-root <path>

@@ -121,6 +121,9 @@ git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude
 - **Stale 传播**：`revise <phase>` 把下游 artifact 标为 stale；`advance` 拒绝 stale artifact，除非加 `--refresh-stale`。
 - **并行相位**：design 和 architecture 都只依赖 discovery，可以并发执行。
 - **可恢复**：新 Claude 会话读 `.engineering/lifecycle.json` 就知道从哪恢复。
+- **跨阶段 Lint**（v0.5.0）：`lint` 执行 7 项跨阶段一致性检查——需求覆盖、设计-测试对齐、ADR 漂移、stale 链完整性、决策密度、孤立引用、insight 积压。生命周期完成时自动运行。
+- **Insight 捕获**（v0.5.0）：轻量级跨阶段反馈，不触发 stale 传播。下游阶段可记录对上游的观察、矛盾、缺口和建议。
+- **原始输入保留**（v0.5.0）：`requirements.json` 中的 `raw_goal` 字段保留用户原始目标的不可变副本，与精炼后的 `problem_statement` 分离。
 
 ---
 
@@ -140,6 +143,9 @@ harness-engineering/
 │   ├── engineering_phase.py          # 进入相位
 │   ├── engineering_advance.py        # 验证 + 推进（含 live 验证）
 │   ├── engineering_revise.py         # 回退 upstream，传播 stale
+│   ├── engineering_lint.py           # 跨阶段一致性检查（v0.5.0）
+│   ├── engineering_insight.py        # 跨阶段反馈捕获（v0.5.0）
+│   ├── engineering_learn.py          # 跨生命周期提取 learnings
 │   ├── engineering_reset.py          # 归档 + 重新开始
 │   └── engineering_validate.py       # 状态完整性检查
 ├── resources/
@@ -155,7 +161,7 @@ harness-engineering/
 
 ## 状态
 
-**v0.1.0 已发布** — 见 [release notes](https://github.com/suntao2yl/claude-skill-engineering/releases/tag/v0.1.0)。
+**v0.5.0 当前版本** — lint、insight 捕获、原始输入保留。
 
 在两个项目上完成端到端 dogfood：
 - `validation/lc-cli/` — 真实 Python CLI，11 个 pytest 通过，完整 auto-drive 闭环

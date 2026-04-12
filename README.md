@@ -142,6 +142,16 @@ approval). Everything else auto-advances.
   and can run concurrently.
 - **Resumable**: a fresh Claude session reads `.engineering/lifecycle.json`
   and knows exactly where to resume.
+- **Cross-phase lint** (v0.5.0): `lint` runs 7 consistency checks across
+  phases — requirement coverage, design-test alignment, ADR drift, stale
+  chain integrity, decision density, orphan references, insight backlog.
+  Auto-runs on lifecycle completion.
+- **Insight capture** (v0.5.0): lightweight cross-phase feedback without
+  triggering stale propagation. Downstream phases record observations,
+  contradictions, gaps, and suggestions for upstream phases.
+- **Raw source preservation** (v0.5.0): `raw_goal` field in
+  `requirements.json` preserves the original user goal verbatim, separate
+  from the refined `problem_statement`.
 
 ---
 
@@ -161,6 +171,9 @@ harness-engineering/
 │   ├── engineering_phase.py          # enter a phase
 │   ├── engineering_advance.py        # validate + advance (with live verification)
 │   ├── engineering_revise.py         # rollback upstream, propagate stale
+│   ├── engineering_lint.py           # cross-phase consistency checks (v0.5.0)
+│   ├── engineering_insight.py        # cross-phase feedback capture (v0.5.0)
+│   ├── engineering_learn.py          # extract learnings across lifecycles
 │   ├── engineering_reset.py          # archive + fresh start
 │   └── engineering_validate.py       # state integrity check
 ├── resources/
@@ -176,7 +189,7 @@ harness-engineering/
 
 ## Status
 
-**v0.1.0 shipped** — see [release notes](https://github.com/suntao2yl/claude-skill-engineering/releases/tag/v0.1.0).
+**v0.5.0 current** — lint, insight capture, raw source preservation.
 
 Dogfooded end-to-end on two projects:
 - `validation/lc-cli/` — real Python CLI, 11 pytest cases, full auto-drive loop
