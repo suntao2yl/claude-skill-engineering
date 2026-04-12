@@ -45,7 +45,7 @@ propagates downstream.
 ## Dependency: REQUIRES `harness-plan` skill
 
 This skill **delegates implementation phase** to the
-[`harness-plan`](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
+[`harness-plan`](https://github.com/suntao2yl/claude-skill-harness)
 skill. Without harness-plan, phases 1-3 and 5-7 work but phase 4 (implementation)
 will block.
 
