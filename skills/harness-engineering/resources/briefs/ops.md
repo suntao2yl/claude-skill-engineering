@@ -63,3 +63,10 @@ Future discovery phases can retrieve prior learnings via:
 ## Decision Logging
 
 Log metric selection rationale and incident triage decisions to `.engineering/decisions.jsonl` with: phase="ops", classification and principle as appropriate.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target ops --unaddressed`
+Ops is the final phase — record insights for upstream phases to inform future lifecycles:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --add --source ops --target <upstream_phase> --kind <kind> --insight "..." --evidence "..."`

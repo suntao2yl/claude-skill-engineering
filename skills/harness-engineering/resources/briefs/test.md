@@ -66,3 +66,10 @@ If any criterion is not met, iterate (up to 2 retries) before signaling.
 ## Decision Logging
 
 When choosing test strategies, coverage tradeoffs, or skipping manual tests, log to `.engineering/decisions.jsonl` with: phase="test", classification="taste", the applicable principle, rationale, and rejected alternative.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target test --unaddressed`
+Address relevant insights during artifact creation. When downstream findings reveal upstream issues, record them:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --add --source test --target <upstream_phase> --kind <kind> --insight "..." --evidence "..."`

@@ -80,6 +80,8 @@ def main() -> int:
     (eng / "metrics").mkdir(exist_ok=True)
     # Decisions audit trail
     (eng / "decisions.jsonl").touch(exist_ok=True)
+    # Cross-phase insights
+    (eng / "insights.jsonl").touch(exist_ok=True)
 
     project_name = args.project_name or root.name
     goal = args.goal.strip()
@@ -97,6 +99,7 @@ def main() -> int:
             "schema_version": 2,
             "id": "REQ-001",
             "title": title,
+            "raw_goal": goal,
             "problem_statement": goal,
             "scope_level": "",
             "pressure_test": {

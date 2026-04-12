@@ -62,3 +62,10 @@ Read @file resources/briefs/release-automation.md for detailed automation patter
 ## Decision Logging
 
 Log version bump level choice, checklist item skip decisions, and rollback strategy choices to `.engineering/decisions.jsonl` with: phase="release", classification and principle as appropriate.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target release --unaddressed`
+Address relevant insights during artifact creation. When release prep reveals upstream issues, record them:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --add --source release --target <upstream_phase> --kind <kind> --insight "..." --evidence "..."`

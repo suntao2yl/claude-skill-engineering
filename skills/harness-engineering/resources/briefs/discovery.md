@@ -42,7 +42,8 @@ These are not rhetorical. If the pressure test reveals the goal is misframed, sa
 ## Step 3: Fill Required Fields
 
 - `title` (<=80 chars, first sentence of goal)
-- `problem_statement` (>=20 chars, markdown ok, expands on goal with context from pressure test)
+- `raw_goal` -- immutable, set by init. DO NOT modify. Preserves the original user goal verbatim.
+- `problem_statement` (>=20 chars, markdown ok, expands on goal with context from pressure test. Refine freely -- raw_goal preserves the original.)
 - `users` (array, each >=3 chars, concrete user profiles not generic labels)
 - `success_metrics` (array, each >=5 chars, measurable outcomes — "users like it" is not a metric; "D7 retention >=30%" is)
 - `constraints` (array, can be empty — hard boundaries like "iOS 15+", "no server")
@@ -76,3 +77,10 @@ Before signaling completion, re-read the artifact and check:
 If any check fails, fix the artifact before signaling.
 
 **Completion signal:** print `DISCOVERY_EXECUTOR_DONE REQ-XXX` when the artifact is saved with all required fields filled.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target discovery --unaddressed`
+Address relevant insights during artifact creation. Mark addressed:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --address <index>`

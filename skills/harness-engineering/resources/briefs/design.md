@@ -32,3 +32,10 @@ completion_signal: "DESIGN_EXECUTOR_DONE DES-XXX"
 ## Decision Logging
 
 When making non-obvious choices during artifact creation (e.g., choosing between flow structures, component granularity, design patterns), log each as a taste decision to `.engineering/decisions.jsonl` with: phase="design", classification="taste", the applicable principle, rationale, and rejected alternative.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target design --unaddressed`
+Address relevant insights during artifact creation. Mark addressed:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --address <index>`

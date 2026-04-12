@@ -67,6 +67,9 @@ REVIEWER_PERSONAS = [
 # v0.3.0: Implementation backends
 IMPL_BACKENDS = ["local", "managed_agents"]
 
+# v0.5.0: Cross-phase insight kinds (Karpathy LLM Wiki inspired)
+INSIGHT_KINDS = ["observation", "contradiction", "gap", "suggestion"]
+
 
 # ── Platform detection (v0.4.0) ──────────────────────────────
 
@@ -178,9 +181,8 @@ def log_decision(project_root: Path, record: DecisionRecord) -> None:
     _append_jsonl(path, asdict(record))
 
 
-def load_decisions(project_root: Path, phase: str | None = None, limit: int = 20) -> list[dict]:
-    """Read recent decisions from decisions.jsonl, optionally filtered by phase."""
-    path = engineering_dir(project_root) / "decisions.jsonl"
+def _load_jsonl(path: Path) -> list[dict]:
+    """Read all records from a JSONL file."""
     if not path.exists():
         return []
     records = []
@@ -190,8 +192,25 @@ def load_decisions(project_root: Path, phase: str | None = None, limit: int = 20
                 records.append(json.loads(line))
     except Exception:
         return []
+    return records
+
+
+def load_decisions(project_root: Path, phase: str | None = None, limit: int = 20) -> list[dict]:
+    """Read recent decisions from decisions.jsonl, optionally filtered by phase."""
+    records = _load_jsonl(engineering_dir(project_root) / "decisions.jsonl")
     if phase:
         records = [r for r in records if r.get("phase") == phase]
+    return records[-limit:]
+
+
+def load_insights(project_root: Path, target: str | None = None,
+                  unaddressed_only: bool = False, limit: int = 50) -> list[dict]:
+    """Read insights from insights.jsonl, optionally filtered."""
+    records = _load_jsonl(engineering_dir(project_root) / "insights.jsonl")
+    if target:
+        records = [r for r in records if r.get("target_phase") == target]
+    if unaddressed_only:
+        records = [r for r in records if not r.get("addressed", False)]
     return records[-limit:]
 
 
@@ -300,6 +319,7 @@ def _migrate_v1_to_v2(data: dict) -> dict:
         return data
     # Discovery artifacts (detected by presence of problem_statement)
     if "problem_statement" in data:
+        data.setdefault("raw_goal", data.get("problem_statement", ""))
         data.setdefault("scope_level", "")
         data.setdefault("pressure_test", {
             "is_right_problem": "",

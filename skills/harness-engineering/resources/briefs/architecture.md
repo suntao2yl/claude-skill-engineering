@@ -35,3 +35,10 @@ completion_signal: "ARCHITECTURE_EXECUTOR_DONE ARCH-XXX"
 ## Decision Logging
 
 Every ADR is inherently a decision record. Additionally, when making choices not captured in ADRs (e.g., what NOT to write an ADR for, scope of stack object), log to `.engineering/decisions.jsonl` with: phase="architecture", classification="taste", the applicable principle, rationale, and rejected alternative.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target architecture --unaddressed`
+Address relevant insights during artifact creation. Mark addressed:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --address <index>`

@@ -76,3 +76,10 @@ Read @file resources/briefs/managed-agents-guide.md for detailed instructions.
 ## Decision Logging
 
 Log backend selection (local vs managed_agents) and feature decomposition choices to `.engineering/decisions.jsonl` with: phase="implementation", classification and principle as appropriate.
+
+## Insight Awareness
+
+Before starting, check for insights targeting this phase:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list --target implementation --unaddressed`
+Address relevant insights during artifact creation. Mark addressed:
+`python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --address <index>`

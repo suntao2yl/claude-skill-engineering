@@ -100,6 +100,14 @@ def _validate_discovery(root: Path, art: dict) -> list[ValidationError]:
                     fix_hint=f"Set requirement_groups[{i}].topic to a descriptive group name.",
                 ))
 
+    raw = art.get("raw_goal", "").strip()
+    if not raw:
+        errors.append(ValidationError(
+            code="DISC-007", severity="warning",
+            message="raw_goal is empty. Original user goal not preserved.",
+            fix_hint="Set raw_goal to the original --goal text from init.",
+        ))
+
     trivial_users = [u for u in users if not isinstance(u, str) or len(u.strip()) < 3]
     if trivial_users:
         errors.append(ValidationError(

@@ -42,6 +42,8 @@ Lifecycle orchestrator: drive AI-native projects across 7 fixed phases via struc
 /harness-engineering phase <name>   -> Enter phase, print upstream + schema
 /harness-engineering advance        -> Validate + advance
 /harness-engineering revise <phase> -> Mark upstream revising; downstream -> stale
+/harness-engineering lint           -> Cross-phase consistency health check
+/harness-engineering insight ...    -> Capture/list/address cross-phase insights
 /harness-engineering reset          -> Archive .engineering/, start fresh
 /harness-engineering gc             -> Run engineering_gc.py (dry-run by default)
 ```
@@ -84,6 +86,9 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_init.py --project-root <path> --
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_status.py --project-root <path>
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_advance.py --project-root <path>
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_validate.py --project-root <path>
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_lint.py --project-root <path> [--json] [--severity warning]
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --add --source <phase> --target <phase> --kind <kind> --insight "..." --evidence "..."
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list [--target <phase>] [--unaddressed]
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--apply]
 ```
 
@@ -92,6 +97,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--a
 - `.engineering/{phase}/` — per-phase artifacts + archive/
 - `.engineering/metrics/phase_runs.jsonl` — execution metrics (append-only)
 - `.engineering/decisions.jsonl` — decision audit trail (append-only)
+- `.engineering/insights.jsonl` — cross-phase insights (append-only, non-blocking)
 
 ## Known Limitations
 - No concurrency safety (single-writer like git working tree).
