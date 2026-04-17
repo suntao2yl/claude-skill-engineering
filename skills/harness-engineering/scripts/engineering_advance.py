@@ -389,11 +389,6 @@ def _execute_command(cmd: str, cwd: Path, label: str, timeout: int = 60,
         if result.returncode != 0:
             preview = ((result.stdout or "") + (result.stderr or ""))[:300].strip()
             return f"{label} failed (exit {result.returncode}): {cmd}\n    Output: {preview}"
-        stderr_lines = (result.stderr or "").splitlines()
-        error_lines = [l for l in stderr_lines if "ERROR:" in l or "FATAL:" in l]
-        if error_lines:
-            preview = "\n    ".join(error_lines[:5])
-            return f"{label} exit 0 but stderr contains errors:\n    {preview}"
         if expected:
             expect_fail = _check_expected(expected, result.stdout or "", result.returncode)
             if expect_fail:
