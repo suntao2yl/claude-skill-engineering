@@ -1,6 +1,7 @@
 ---
 name: harness-engineering
-description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness-plan skill (delegates implementation phase to it). 7 phases (discovery->design->architecture->implementation->test->release->ops) with schema-validated JSON artifacts as handoff protocol. Triggers: /harness-engineering, lifecycle, phase, discovery"
+description: "Lifecycle orchestrator for AI-native software development. REQUIRES harness-plan skill (delegates implementation phase to it). 7 phases (discovery->design->architecture->implementation->test->release->ops) with schema-validated JSON artifacts as handoff protocol. Use when user says 'start a project lifecycle', 'run discovery phase', 'advance to next phase', 'check lifecycle status', or invokes /harness-engineering."
+compatibility: "Requires Python 3.8+. Works in Claude Code CLI and Claude.ai."
 allowed-tools:
   - Read
   - Write
@@ -12,6 +13,9 @@ allowed-tools:
   - TaskCreate
   - TaskUpdate
   - AskUserQuestion
+metadata:
+  author: suntao2yl
+  version: 0.5.0
 ---
 
 # Engineering (harness-engineering)
@@ -61,6 +65,7 @@ while true:
 ```
 When multiple phases show "ready", dispatch executors in parallel.
 Implementation phase delegates to harness-plan skill (see @file resources/briefs/implementation.md).
+Do NOT read resources/phase-executor-briefs.md (deprecated; per-phase briefs live in resources/briefs/).
 
 Loop detection: after validation failure, error signatures are hashed and stored in lifecycle.json.
 If the same signature repeats 3 times consecutively, advance exits 3 and auto-drive stops.
@@ -104,3 +109,66 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--a
 - Schema auto-migrates v1→v2 on read (backward compatible).
 - Harness-plan progress is read-only inside engineering.
 - Forward transitions only auto-advance; `revise` is explicit.
+
+## Gotchas
+- Never hand-edit `.engineering/lifecycle.json` or any phase artifact JSON to bypass a failed validation. Always fix the root cause and re-run `engineering_advance.py`.
+- The implementation phase MUST delegate to harness-plan. Do not write production code directly inside the implementation executor — it will pass advance validation but produce unmaintainable, untracked work.
+- Subagents (phase executors) must NOT call `engineering_*.py` scripts. Only the auto-drive loop calls those. Subagents write artifacts; the loop validates and advances.
+- After `engineering_advance.py` exits 1 (validation failure), do not skip to the next phase. Read the error output, fix the artifact, and re-run advance.
+- Do not load all upstream artifacts into a subagent prompt. Pass only the immediate upstream artifact(s) listed in the Phases table.
+- `engineering_lint.py` warnings are informational; errors are blocking. Do not ignore errors by re-running lint with `--severity warning` to hide them.
+
+## Troubleshooting
+
+**advance exits 1 (validation failure)**
+1. Read the stderr output — it names the missing or invalid fields.
+2. Open the phase artifact and fix the flagged fields.
+3. Re-run `python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_advance.py --project-root <path>`.
+
+**advance exits 3 (loop detected)**
+The same error signature repeated 3 times. Auto-drive must stop.
+1. Run `python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_status.py --project-root <path>` to see the stuck phase.
+2. Inspect the artifact manually — the issue is usually a field that keeps failing the same validation.
+3. Fix the root cause, then resume auto-drive.
+
+**advance exits 42 (risk gate)**
+A phase requires user approval (discovery.approved, architecture.approved, or release.approved).
+1. Present the artifact summary to the user.
+2. Wait for explicit approval before continuing.
+
+**lint reports cross-phase inconsistencies**
+1. Run `python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_lint.py --project-root <path> --json` to get structured output.
+2. Each finding includes `source_phase`, `target_phase`, and `description`.
+3. Fix the upstream artifact first, then re-validate downstream.
+
+**harness-plan not installed**
+If the prerequisite check fails, tell the user:
+`Install harness-plan: see https://github.com/suntao2yl/claude-skill-harness`
+
+## Examples
+
+**Example: init and auto-drive a small project**
+
+```
+User: /harness-engineering init "Build a CLI tool that converts CSV to JSON"
+
+→ Runs engineering_init.py, creates .engineering/ with lifecycle.json
+→ Enters auto-drive loop:
+  1. discovery: fills requirements.json (title, problem_statement, users, success_metrics)
+     → engineering_advance.py validates → exit 0 → auto-advance
+  2. design: fills design-spec.json (flows, components)
+     → exit 0 → auto-advance
+  3. architecture: fills stack.json + ADR-001.json
+     → exit 42 (risk gate: architecture.approved) → pauses for user
+User: approved
+  4. implementation: delegates to harness-plan, drives features to done
+     → exit 0 → auto-advance
+  5. test: builds test-report.json, re-executes verification commands
+     → exit 0 → auto-advance
+  6. release: fills release-checklist.json, verifies tagged_commit
+     → exit 42 (risk gate) → pauses for user
+User: approved
+  7. ops: creates metrics.json skeleton
+     → exit 0 → all phases complete
+→ Runs engineering_lint.py, reports findings, exits loop.
+```
