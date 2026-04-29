@@ -871,6 +871,14 @@ def main() -> int:
         save_lifecycle(root, lc)
         print(f"Advanced: {current} → {nxt}")
 
+        # Refresh AGENTS.md so the active-role marker reflects the new phase.
+        # Best-effort; failure does not roll back the transition.
+        try:
+            from engineering_agents import emit_agents_md
+            emit_agents_md(root)
+        except Exception as exc:
+            print(f"  WARNING: AGENTS.md refresh skipped: {exc}", file=sys.stderr)
+
         parallel = [
             p for p in PHASES
             if p != nxt

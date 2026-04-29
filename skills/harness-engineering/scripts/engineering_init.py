@@ -136,6 +136,16 @@ def main() -> int:
     log_transition(lifecycle, "init", {"goal": goal, "mode": args.mode, "start_phase": start_phase})
     save_lifecycle(root, lifecycle)
 
+    # Generate the cross-tool role contract at project root. Best-effort:
+    # if generation fails, init still succeeds.
+    try:
+        from engineering_agents import emit_agents_md
+        agents_path = emit_agents_md(root)
+        if agents_path:
+            print(f"  AGENTS.md written: {agents_path.relative_to(root) if agents_path.is_relative_to(root) else agents_path}")
+    except Exception as exc:
+        print(f"  WARNING: AGENTS.md generation skipped: {exc}", file=sys.stderr)
+
     print(f"Initialized .engineering/ at {eng}")
     print(f"  project: {project_name}")
     print(f"  mode: {args.mode}")
