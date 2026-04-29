@@ -118,6 +118,28 @@ def harness_plan_skill_dir() -> Path | None:
     return None
 
 
+def harness_discipline_completion_verify_script() -> Path | None:
+    """Locate harness-discipline's completion_verify.py if installed.
+
+    Engineering's implementation gate prefers this script over its own
+    inline verification (single source of truth). Falls back to None if
+    discipline isn't installed; callers handle that case.
+    """
+    home = Path.home()
+    platform = detect_platform()
+    bases = [".codex", ".claude"] if platform == "codex" else [".claude", ".codex"]
+    for base in bases:
+        plugins = home / base / "plugins"
+        if not plugins.exists():
+            continue
+        for match in plugins.glob(
+            "**/harness-discipline/skills/completion-verify/scripts/completion_verify.py"
+        ):
+            if match.exists():
+                return match
+    return None
+
+
 @dataclass
 class ManagedAgentSession:
     """Tracks a Managed Agents session for the implementation phase."""

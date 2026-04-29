@@ -70,6 +70,12 @@ Read @file resources/briefs/managed-agents-guide.md for detailed instructions.
 - Decompose into 3-8 features, each independently verifiable.
 - Every feature MUST have a `verification.command` that actually runs.
 - Features with placeholder/fake verification WILL fail advance's live check.
+- Use `/tdd-plan` from `harness-discipline` to seed each feature's
+  verification command. The skill emits JSON; `verification_command` is the
+  field to copy into `feature.verification.command`.
+- Use `/completion-verify` (not inline shell loops) when validating that a
+  feature is done. This is the canonical Self-Test executor; engineering
+  advance also calls it during the implementation gate.
 
 **Completion signal:** print `IMPLEMENTATION_EXECUTOR_DONE IMPL-XXX`.
 

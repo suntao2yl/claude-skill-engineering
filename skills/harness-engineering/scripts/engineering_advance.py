@@ -16,6 +16,7 @@ Exit codes: 0=success, 1=validation fail, 3=loop detected, 42=risk gate
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
@@ -33,6 +34,7 @@ from engineering_lib import (
     artifact_missing_fields,
     engineering_dir,
     error_signature,
+    harness_discipline_completion_verify_script,
     is_phase_skipped,
     load_active_artifact,
     load_json,
@@ -317,7 +319,11 @@ def _validate_implementation(root: Path, art: dict) -> list[ValidationError]:
 
 
 def _run_harness_verification(root: Path, campaign_path: Path, features_path: Path) -> list[ValidationError]:
-    """Execute harness test_command and per-feature verification."""
+    """Execute harness test_command and per-feature verification.
+
+    Prefers harness-discipline's completion_verify.py when installed (single
+    source of truth). Falls back to inline subprocess execution otherwise.
+    """
     errors = []
     campaign = load_json(campaign_path, required=False)
     if campaign is None:
@@ -354,27 +360,97 @@ def _run_harness_verification(root: Path, campaign_path: Path, features_path: Pa
 
     features = features_data.get("features", [])
     done_features = [f for f in features if f.get("status") == "done"]
+
+    discipline_script = harness_discipline_completion_verify_script()
     for feat in done_features:
-        fid = feat.get("id", "?")
-        v = feat.get("verification", {})
-        if isinstance(v, dict):
-            cmd = v.get("command", "")
-            expected = v.get("expected", "")
-        elif isinstance(v, str):
-            cmd = v
-            expected = ""
+        if discipline_script:
+            errors.extend(_verify_feature_via_discipline(feat, root, discipline_script))
         else:
-            cmd = ""
-            expected = ""
-        if not cmd:
-            continue
-        result = _execute_command(cmd, root, label=f"{fid} verification", expected=expected)
-        if result:
-            errors.append(ValidationError(
-                code=f"IMPL-V-{fid}", severity="error", message=result,
-                fix_hint=f"Fix feature {fid}'s verification command or its implementation so the command passes.",
-            ))
+            errors.extend(_verify_feature_inline(feat, root))
     return errors
+
+
+def _verify_feature_via_discipline(feat: dict, root: Path, script: Path) -> list[ValidationError]:
+    """Verify a feature by piping it to harness-discipline's completion_verify.py."""
+    fid = feat.get("id", "?")
+    payload = json.dumps(feat)
+    try:
+        result = subprocess.run(
+            ["python3", str(script), "--stdin", "--project-root", str(root), "--no-evidence-log"],
+            input=payload, capture_output=True, text=True, timeout=600,
+        )
+    except subprocess.TimeoutExpired:
+        return [ValidationError(
+            code=f"IMPL-V-{fid}", severity="error",
+            message=f"{fid}: completion-verify timed out after 600s",
+            fix_hint=f"Investigate why {fid}'s verification command hangs.",
+        )]
+    except Exception as exc:
+        return [ValidationError(
+            code=f"IMPL-V-{fid}", severity="error",
+            message=f"{fid}: completion-verify spawn failed: {exc}",
+            fix_hint="Check that python3 is on PATH and the discipline script is installed.",
+        )]
+
+    try:
+        verdict = json.loads(result.stdout)
+    except Exception:
+        return [ValidationError(
+            code=f"IMPL-V-{fid}", severity="error",
+            message=f"{fid}: completion-verify produced unparseable output (exit {result.returncode})",
+            fix_hint="Re-run /completion-verify manually to inspect the output.",
+        )]
+
+    status = verdict.get("status")
+    if status == "pass":
+        return []
+    if status == "no_commands":
+        # Feature has no verification.command — already a separate validator's concern;
+        # don't double-report here.
+        return []
+    if status == "partial":
+        pending = verdict.get("manual_checks_pending") or []
+        return [ValidationError(
+            code=f"IMPL-V-{fid}", severity="error",
+            message=f"{fid}: manual_checks pending: {pending[:3]}",
+            fix_hint=f"Complete and record manual checks for {fid} before advancing.",
+        )]
+    # status == "fail" or "error"
+    failed = [v for v in (verdict.get("verifications") or [])
+              if v.get("exit_code") not in (0, None) or v.get("matched_expected") is False]
+    snippet = ""
+    if failed:
+        first = failed[0]
+        snippet = f" (cmd: {first.get('command', '?')!r}, exit {first.get('exit_code')})"
+    return [ValidationError(
+        code=f"IMPL-V-{fid}", severity="error",
+        message=f"{fid}: completion-verify status={status}{snippet}",
+        fix_hint=f"Run /completion-verify --feature .harness/features.json --feature-id {fid} to see details.",
+    )]
+
+
+def _verify_feature_inline(feat: dict, root: Path) -> list[ValidationError]:
+    """Inline verification — used when harness-discipline isn't installed."""
+    fid = feat.get("id", "?")
+    v = feat.get("verification", {})
+    if isinstance(v, dict):
+        cmd = v.get("command", "")
+        expected = v.get("expected", "")
+    elif isinstance(v, str):
+        cmd = v
+        expected = ""
+    else:
+        cmd = ""
+        expected = ""
+    if not cmd:
+        return []
+    result = _execute_command(cmd, root, label=f"{fid} verification", expected=expected)
+    if result:
+        return [ValidationError(
+            code=f"IMPL-V-{fid}", severity="error", message=result,
+            fix_hint=f"Fix feature {fid}'s verification command or its implementation so the command passes.",
+        )]
+    return []
 
 
 def _execute_command(cmd: str, cwd: Path, label: str, timeout: int = 60,

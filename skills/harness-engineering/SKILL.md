@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 metadata:
   author: suntao2yl
-  version: 0.6.0
+  version: 0.7.0
 ---
 
 # Engineering (harness-engineering)
@@ -84,6 +84,13 @@ Every auto-decision is logged to `.engineering/decisions.jsonl` with phase, clas
 **Requires `harness-plan` skill** for implementation phase. Check:
 `test -f ~/.claude/skills/harness-plan/SKILL.md || find ~/.claude/plugins -path '*/harness-plan/skills/harness-plan/SKILL.md' -print -quit | grep -q .`
 If missing, tell user to install it before proceeding.
+
+**Recommended: `harness-discipline` skill** for canonical TDD planning,
+completion verification, and change-spec authoring. When installed,
+`engineering_advance.py` prefers `completion-verify` for the implementation
+gate and design/implementation briefs invoke `/tdd-plan` and `/change-spec`.
+Without discipline, a degraded inline path is used (same verdicts, less
+structured evidence). See `docs/dedup-matrix.md` for capability mapping.
 
 ## Script Canon
 ```
