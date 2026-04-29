@@ -76,6 +76,12 @@ Read @file resources/briefs/managed-agents-guide.md for detailed instructions.
 - Use `/completion-verify` (not inline shell loops) when validating that a
   feature is done. This is the canonical Self-Test executor; engineering
   advance also calls it during the implementation gate.
+- For non-trivial features (>1 file changed or >100 LOC), break each into
+  CHG-NNN change units via `harness_change.py propose`. The feature is
+  `done` only when all its `change_units[]` are `archived`. Engineering
+  advance's implementation gate accepts both flat-features (no
+  change_units) and change-unit-decomposed features uniformly — see
+  harness-plan's SKILL.md "Change Units" section for the lifecycle.
 
 **Completion signal:** print `IMPLEMENTATION_EXECUTOR_DONE IMPL-XXX`.
 
