@@ -11,7 +11,7 @@
     {
       "name": "harness-engineering",
       "description": "Lifecycle orchestrator for AI-native software development. 7 phases with schema-validated JSON artifacts as handoff protocol. Delegates implementation to the harness-plan skill.",
-      "version": "0.9.0",
+      "version": "1.0.0",
       "source": "./",
       "homepage": "https://github.com/suntao2yl/claude-skill-engineering",
       "license": "MIT",

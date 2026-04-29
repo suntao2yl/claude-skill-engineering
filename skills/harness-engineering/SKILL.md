@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 metadata:
   author: suntao2yl
-  version: 0.9.0
+  version: 1.0.0
 ---
 
 # Engineering (harness-engineering)
@@ -103,11 +103,14 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path>
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list [--target <phase>] [--unaddressed]
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--apply]
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_agents.py --project-root <path> [--refresh]
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_eval.py --project-root <path> [--create | --run [--mark-baseline] | --baseline | --compare baseline | --list-runs]
 ```
 
 ## Runtime Files
-- `.engineering/lifecycle.json` — master state
+- `.engineering/lifecycle.json` — master state (also holds `eval_baseline` pointer)
 - `.engineering/{phase}/` — per-phase artifacts + archive/
+- `.engineering/eval/cases/EVAL-NNN.json` — distilled regression cases (Phase 5)
+- `.engineering/eval/runs/run-<ts>/result.json` — eval execution records
 - `.engineering/metrics/phase_runs.jsonl` — execution metrics (append-only)
 - `.engineering/decisions.jsonl` — decision audit trail (append-only)
 - `.engineering/insights.jsonl` — cross-phase insights (append-only, non-blocking)

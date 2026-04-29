@@ -27,6 +27,21 @@ completion_signal: "OPS_EXECUTOR_DONE OPS-XXX"
 `metrics_tracked` array has entries of `{name, target, source}`.
 Initial ops artifact can be skeletal — just the metrics to watch.
 
+## Step 1.5: Eval baseline (v1.0.0)
+
+On entry to ops, distill the test phase's results into reusable EVAL-NNN
+cases and mark a baseline. This produces a regression detection harness
+that survives model upgrades and refactors.
+
+```
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_eval.py --project-root <path> --create
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_eval.py --project-root <path> --run --mark-baseline
+```
+
+If the run isn't clean (any failures), the test phase wasn't actually
+green — revise the test phase, don't bake a broken baseline. See
+`resources/briefs/eval.md` for the full protocol.
+
 ## Step 2: Incidents & Postmortems
 
 Incidents and postmortems get added post-release as reality happens.
