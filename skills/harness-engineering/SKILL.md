@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 metadata:
   author: suntao2yl
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # Engineering (harness-engineering)
@@ -102,7 +102,7 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_lint.py --project-root <path> [-
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --add --source <phase> --target <phase> --kind <kind> --insight "..." --evidence "..."
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_insight.py --project-root <path> --list [--target <phase>] [--unaddressed]
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--apply]
-python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_agents.py --project-root <path> [--refresh]
+python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_agents.py --project-root <path>
 python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_eval.py --project-root <path> [--create | --run [--mark-baseline] | --baseline | --compare baseline | --list-runs]
 ```
 

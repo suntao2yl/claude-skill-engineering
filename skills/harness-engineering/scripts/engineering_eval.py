@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """Evaluation harness for completed engineering lifecycles.
 
-Phase 5 addition. Once a project has a green test phase, this script
-distills test-report.json into reusable EVAL-NNN cases that can be re-run
-to detect regressions when:
-  - the codebase changes (new features, refactors)
-  - the AI model changes (Sonnet 4.6 -> 4.7, etc.)
-  - the harness changes (new lint, new validators)
+Distills the test phase's passing tests into reusable EVAL-NNN cases that
+can be re-run later to detect regressions when code, models, or harness
+configuration change. The baseline run is recorded in lifecycle.json so
+subsequent runs can compare against it.
 
 Subcommands:
-  --create        Distill test-report.json -> .engineering/eval/cases/EVAL-NNN.json
-  --run           Execute every case; write .engineering/eval/runs/run-NNN/result.json
-  --baseline      Mark the latest run as baseline (records run id in lifecycle.json)
+  --create        Distill test-report.json -> .engineering/eval/cases/
+  --run           Execute every case; write runs/run-<ts>/result.json
+  --baseline      Mark the latest run as baseline
   --compare REF   Compare current run with REF (run id, or 'baseline')
   --list-runs     List all runs
 """
@@ -24,7 +22,6 @@ import re
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -34,16 +31,19 @@ if str(SCRIPTS_DIR) not in sys.path:
 
 from engineering_lib import (  # noqa: E402
     engineering_dir,
+    load_json,
     load_lifecycle,
     project_root_arg,
     require_engineering,
+    save_json,
     save_lifecycle,
     utc_now,
 )
 
 
 def utc_now_compact() -> str:
-    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    # Filesystem-safe variant of utc_now (no dashes/colons).
+    return utc_now().translate({ord("-"): None, ord(":"): None})
 
 
 def eval_dir(root: Path) -> Path:
@@ -76,11 +76,11 @@ def next_eval_id(root: Path) -> str:
 
 
 def load_test_report(root: Path) -> dict[str, Any]:
-    path = test_report_path(root)
-    if not path.exists():
-        print(json.dumps({"error": f"test-report.json not found at {path}"}))
+    report = load_json(test_report_path(root), required=False)
+    if report is None:
+        print(json.dumps({"error": f"test-report.json not found at {test_report_path(root)}"}))
         sys.exit(2)
-    return json.loads(path.read_text(encoding="utf-8"))
+    return report
 
 
 def cmd_create(args, root: Path) -> int:
@@ -121,7 +121,7 @@ def cmd_create(args, root: Path) -> int:
             "created_at": utc_now(),
         }
         path = cases_dir(root) / f"{eid}.json"
-        path.write_text(json.dumps(case, indent=2) + "\n", encoding="utf-8")
+        save_json(path, case)
         created.append(eid)
 
     print(json.dumps({
@@ -163,7 +163,7 @@ def cmd_run(args, root: Path) -> int:
     case_files = sorted(cd.glob("EVAL-*.json"))
     results: list[dict[str, Any]] = []
     for cf in case_files:
-        case = json.loads(cf.read_text(encoding="utf-8"))
+        case = load_json(cf)
         results.append(_execute_case(case, root))
 
     summary = {
@@ -174,9 +174,9 @@ def cmd_run(args, root: Path) -> int:
         "failed": sum(1 for r in results if r["status"] == "fail"),
         "results": results,
     }
-    (run_path / "result.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    save_json(run_path / "result.json", summary)
 
-    if args.baseline:
+    if args.mark_baseline:
         lc = load_lifecycle(root)
         lc["eval_baseline"] = run_id
         save_lifecycle(root, lc)
@@ -266,8 +266,8 @@ def cmd_compare(args, root: Path) -> int:
         print(json.dumps({"error": "latest run IS the target — nothing to compare"}))
         return 2
 
-    base = json.loads(target_path.read_text(encoding="utf-8"))
-    cur = json.loads(latest_path.read_text(encoding="utf-8"))
+    base = load_json(target_path)
+    cur = load_json(latest_path)
 
     base_status = {r["id"]: r["status"] for r in base.get("results") or []}
     cur_status = {r["id"]: r["status"] for r in cur.get("results") or []}
@@ -307,7 +307,7 @@ def cmd_list_runs(args, root: Path) -> int:
         result_path = d / "result.json"
         if not result_path.exists():
             continue
-        result = json.loads(result_path.read_text(encoding="utf-8"))
+        result = load_json(result_path)
         runs.append({
             "run_id": d.name,
             "passed": result.get("passed"),
@@ -336,18 +336,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    # Disambiguate --baseline (standalone) vs --run --mark-baseline
-    if args.run and args.mark_baseline:
-        args.baseline = True
-    elif args.run:
-        args.baseline = False
     root = project_root_arg(args.project_root)
     require_engineering(root)
     if args.create:
         return cmd_create(args, root)
     if args.run:
         return cmd_run(args, root)
-    if args.baseline and not args.run:
+    if args.baseline:
         return cmd_baseline(args, root)
     if args.compare:
         return cmd_compare(args, root)

@@ -2,19 +2,13 @@
 """Generate or refresh AGENTS.md at the project root.
 
 AGENTS.md is the cross-tool role contract for AI agents working in this
-repository (consumed by Cursor, Aider, Codex, and Claude Code). It states:
-  - which roles operate in which phase, with what tools
-  - which hard constraints are gating
-  - what the failure protocol is
+repository (consumed by Cursor, Aider, Codex, and Claude Code). It states
+which roles operate in which phase, the hard constraints that gate
+progress, and the failure protocol.
 
-The file content is bracketed by BEGIN/END markers so users can hand-edit
-freely outside the markers without conflict. We only rewrite what's between
-the markers.
-
-Invoked from:
-  - engineering_init.py — at end of init, to seed initial AGENTS.md
-  - engineering_advance.py — after a successful phase transition, to refresh
-  - manually — `python3 engineering_agents.py --refresh`
+The file content is bracketed by BEGIN/END markers; only the content
+between markers is rewritten, so user-authored sections outside the
+markers are preserved across regenerations.
 """
 
 from __future__ import annotations
@@ -166,15 +160,19 @@ def merge_with_existing(existing: str, generated: str) -> str:
     return f"{block}\n\n{existing}"
 
 
-def emit_agents_md(project_root: Path, *, force: bool = False) -> Path | None:
-    """Generate or refresh AGENTS.md at project_root. Returns the path written, or None."""
+def emit_agents_md(project_root: Path) -> Path | None:
+    """Generate or refresh AGENTS.md at project_root.
+
+    Returns the path written, or None if the file already matches what would
+    be generated (idempotent no-op).
+    """
     require_engineering(project_root)
     lifecycle = load_lifecycle(project_root)
     target = project_root / "AGENTS.md"
     generated = render_block(lifecycle)
     existing = target.read_text(encoding="utf-8") if target.exists() else ""
     new_text = merge_with_existing(existing, generated)
-    if not force and existing == new_text:
+    if existing == new_text:
         return None
     target.write_text(new_text, encoding="utf-8")
     return target
@@ -183,11 +181,9 @@ def emit_agents_md(project_root: Path, *, force: bool = False) -> Path | None:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--project-root", default=".")
-    p.add_argument("--refresh", action="store_true",
-                   help="Always rewrite, even if content matches.")
     args = p.parse_args()
     root = project_root_arg(args.project_root)
-    written = emit_agents_md(root, force=args.refresh)
+    written = emit_agents_md(root)
     if written:
         print(f"WROTE {written}")
     else:

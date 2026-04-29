@@ -1,6 +1,6 @@
 {
   "name": "harness-engineering",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lifecycle orchestrator for AI-native software development. 7 phases with schema-validated JSON artifacts, cross-phase lint, insight capture, and raw source preservation.",
   "author": {
     "name": "suntao2yl"
