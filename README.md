@@ -172,6 +172,46 @@ approval). Everything else auto-advances.
 - **Raw source preservation** (v0.5.0): `raw_goal` field in
   `requirements.json` preserves the original user goal verbatim, separate
   from the refined `problem_statement`.
+- **AGENTS.md generation** (v0.8.0): emits a project-root `AGENTS.md` on
+  init and refreshes it on each phase transition. Compatible with Cursor,
+  Aider, Codex, and Claude Code. Hand-edits outside the BEGIN/END markers
+  are preserved.
+- **Eval baseline** (v1.0.0): `engineering_eval.py` distills the test
+  phase's passing tests into `EVAL-NNN` cases and records a baseline run.
+  Re-run later with `--compare baseline` to detect regressions across
+  refactors, model upgrades, or harness changes.
+- **Discipline integration** (v0.7.0): when
+  [`harness-discipline`](https://github.com/suntao2yl/harness-discipline)
+  is installed, the implementation gate prefers `/completion-verify` for
+  per-feature verification; design and implementation briefs invoke
+  `/change-spec` and `/tdd-plan`. Inline fallback runs when discipline
+  isn't installed.
+- **Change-unit awareness** (v0.9.0): the implementation gate accepts both
+  flat-features and CHG-NNN-decomposed features uniformly. See
+  [harness-plan's change-units documentation](https://github.com/suntao2yl/claude-skill-harness#change-units-chg-nnn).
+- **Cross-tool capability matrix** (v0.6.0): `docs/dedup-matrix.md`
+  defines which skill owns which capability across discipline / plan /
+  engineering. ID conventions: `docs/id-conventions.md`.
+
+---
+
+## Automated project advancement
+
+Combine the engineering lifecycle with harness-plan's autodrive to run an
+entire project end-to-end without operator input. See the dedicated tutorial:
+
+**[docs/autodrive-tutorial.md](docs/autodrive-tutorial.md)** ([中文](docs/autodrive-tutorial.zh-CN.md))
+
+Quick orientation:
+
+1. `/harness-engineering "your goal"` — init, runs through discovery → design → architecture
+2. `--confirm` the gates (discovery.approved, architecture.approved)
+3. Implementation phase delegates to harness-plan with autodrive enabled →
+   each feature runs in its own session, commits automatically, spawns the
+   next session
+4. After all features done, the chain runs review and stops
+5. ops phase runs `engineering_eval.py --create --run --mark-baseline` to
+   freeze a regression baseline
 
 ---
 

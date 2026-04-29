@@ -147,6 +147,27 @@ git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude
 - **跨阶段 Lint**（v0.5.0）：`lint` 执行 7 项跨阶段一致性检查——需求覆盖、设计-测试对齐、ADR 漂移、stale 链完整性、决策密度、孤立引用、insight 积压。生命周期完成时自动运行。
 - **Insight 捕获**（v0.5.0）：轻量级跨阶段反馈，不触发 stale 传播。下游阶段可记录对上游的观察、矛盾、缺口和建议。
 - **原始输入保留**（v0.5.0）：`requirements.json` 中的 `raw_goal` 字段保留用户原始目标的不可变副本，与精炼后的 `problem_statement` 分离。
+- **AGENTS.md 自动生成**（v0.8.0）：init 时在项目根写入 `AGENTS.md`，每次 phase 切换时刷新。Cursor / Aider / Codex / Claude Code 都能读；BEGIN/END marker 之外的手写内容会被保留。
+- **Eval 基线**（v1.0.0）：`engineering_eval.py` 把 test phase 通过的测试抽成 `EVAL-NNN` 用例并记录 baseline。日后随时 `--compare baseline` 检测重构 / 模型升级 / harness 变更引入的回归。
+- **Discipline 集成**（v0.7.0）：安装了 [`harness-discipline`](https://github.com/suntao2yl/harness-discipline) 后，implementation gate 优先用 `/completion-verify` 做 per-feature 验证；design / implementation brief 调 `/change-spec` 和 `/tdd-plan`。未装时 fallback 到内联实现。
+- **Change unit 兼容**（v0.9.0）：implementation gate 同等接受扁平 feature 与拆成 CHG-NNN 的 feature。详见 [harness-plan 的 change-units 文档](https://github.com/suntao2yl/claude-skill-harness/blob/main/README.zh-CN.md#change-unitschg-nnn)。
+- **跨工具能力矩阵**（v0.6.0）：`docs/dedup-matrix.md` 定义 discipline / plan / engineering 三个 skill 的能力归属；`docs/id-conventions.md` 定义全仓 ID 命名规则。
+
+---
+
+## 自动化推进
+
+把 engineering 生命周期与 harness-plan 的 autodrive 串起来，可以让一个项目从 init 到 release 全程不需要人工介入。请看专门的教程：
+
+**[docs/autodrive-tutorial.zh-CN.md](docs/autodrive-tutorial.zh-CN.md)** （[English](docs/autodrive-tutorial.md)）
+
+操作概览：
+
+1. `/harness-engineering "你的目标"` — init，自动跑过 discovery → design → architecture
+2. risk gate（discovery.approved、architecture.approved）用 `--confirm` 放行
+3. implementation 阶段委托给 harness-plan 并启用 autodrive → 每个 feature 单独会话、自动 commit、Stop hook spawn 下一会话
+4. 全部 feature 完成后，链自动跑 review session 然后停下
+5. ops 阶段调 `engineering_eval.py --create --run --mark-baseline` 冻结回归基线
 
 ---
 
