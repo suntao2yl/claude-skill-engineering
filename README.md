@@ -160,6 +160,11 @@ approval). Everything else auto-advances.
   `advance` refuses stale artifacts without `--refresh-stale`.
 - **Parallel phases**: design + architecture both depend only on discovery
   and can run concurrently.
+- **Parallel interface design** (architecture): for contested interface
+  choices (event bus vs RPC, columnar vs row-store, etc.), the orchestrator
+  may dispatch 2-3 parallel sub-agents — each producing a complete sketch
+  under a different paradigm — and pick. See
+  `skills/harness-engineering/REFERENCE.md`.
 - **Resumable**: a fresh Claude session reads `.engineering/lifecycle.json`
   and knows exactly where to resume.
 - **Cross-phase lint** (v0.5.0): `lint` runs 7 consistency checks across

@@ -143,6 +143,7 @@ git clone https://github.com/suntao2yl/claude-skill-engineering.git && cd claude
 - **风险门**：`discovery.approved`、`architecture.approved`、`release.approved` 需要 `--confirm` 标志。到 gate 时 `advance` exit 42。
 - **Stale 传播**：`revise <phase>` 把下游 artifact 标为 stale；`advance` 拒绝 stale artifact，除非加 `--refresh-stale`。
 - **并行相位**：design 和 architecture 都只依赖 discovery，可以并发执行。
+- **并行接口设计**(architecture)：当接口选择有争议(event bus vs RPC、列存 vs 行存等)时,orchestrator 可以 dispatch 2-3 个并行 sub-agent,各按一种范式产出完整 sketch,再选定。详见 `skills/harness-engineering/REFERENCE.md`。
 - **可恢复**：新 Claude 会话读 `.engineering/lifecycle.json` 就知道从哪恢复。
 - **跨阶段 Lint**（v0.5.0）：`lint` 执行 7 项跨阶段一致性检查——需求覆盖、设计-测试对齐、ADR 漂移、stale 链完整性、决策密度、孤立引用、insight 积压。生命周期完成时自动运行。
 - **Insight 捕获**（v0.5.0）：轻量级跨阶段反馈，不触发 stale 传播。下游阶段可记录对上游的观察、矛盾、缺口和建议。
