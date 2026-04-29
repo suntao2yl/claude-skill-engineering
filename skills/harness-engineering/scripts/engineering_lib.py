@@ -157,6 +157,39 @@ def error_signature(errors: list[ValidationError]) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:12]
 
 
+# ID format conventions are documented at docs/id-conventions.md.
+# Phase 1 lint level: warning. Phase 4 will upgrade selected prefixes to error.
+ID_PREFIX_PATTERNS: dict[str, str] = {
+    "REQ":  r"^REQ-\d{3,}$",
+    "DES":  r"^DES-\d{3,}$",
+    "ADR":  r"^ADR-\d{3,}$",
+    "IMPL": r"^IMPL-\d{3,}$",
+    "TEST": r"^TEST-\d{3,}$",
+    "REL":  r"^REL-\d{3,}$",
+    "OPS":  r"^OPS-\d{3,}$",
+    "EVAL": r"^EVAL-\d{3,}$",
+    "CHG":  r"^CHG-\d{3,}$",
+}
+
+
+def validate_id_format(id_str: str, prefix: str) -> str | None:
+    """Return None if id_str matches the convention for prefix, else a warn message.
+
+    Caller decides severity. Phase 1 callers should treat the message as a
+    warning (informational); Phase 4 will upgrade to error for new IDs.
+    """
+    import re
+    pattern = ID_PREFIX_PATTERNS.get(prefix)
+    if not pattern:
+        return f"unknown ID prefix {prefix!r} (see docs/id-conventions.md)"
+    if not isinstance(id_str, str) or not re.match(pattern, id_str):
+        return (
+            f"ID {id_str!r} does not match convention {pattern} "
+            f"(see docs/id-conventions.md)"
+        )
+    return None
+
+
 def _append_jsonl(path: Path, record: dict) -> None:
     """Fire-and-forget: append one JSON record to a .jsonl file."""
     try:

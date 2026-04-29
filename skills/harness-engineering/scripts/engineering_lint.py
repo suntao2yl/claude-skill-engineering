@@ -32,6 +32,7 @@ from engineering_lib import (
     phase_dir,
     project_root_arg,
     require_engineering,
+    validate_id_format,
 )
 
 SEVERITY_ORDER = {"concern": 0, "warning": 1, "info": 2}
@@ -251,6 +252,43 @@ def _check_insight_backlog(root: Path) -> list[LintFinding]:
 
 
 
+def _check_id_conventions(root: Path) -> list[LintFinding]:
+    """Phase 1 lint: warn on artifact IDs that don't match docs/id-conventions.md.
+
+    Checks each phase's active artifact's `id` field. Phase 4 will tighten
+    selected prefixes to advance-blocking errors; for now, all findings are
+    warnings only.
+    """
+    findings: list[LintFinding] = []
+    # phase -> expected ID prefix (only for phases whose artifact has a top-level `id`)
+    phase_prefix = {
+        "discovery":    "REQ",
+        "design":       "DES",
+        "implementation": "IMPL",
+        "test":         "TEST",
+        "release":      "REL",
+        "ops":          "OPS",
+    }
+    for phase, prefix in phase_prefix.items():
+        try:
+            artifact = load_active_artifact(root, phase)
+        except Exception:
+            continue
+        if not artifact:
+            continue
+        id_str = artifact.get("id")
+        if id_str is None:
+            continue
+        msg = validate_id_format(id_str, prefix)
+        if msg:
+            findings.append(LintFinding(
+                check="id_conventions", severity="warning",
+                message=f"{phase}: {msg}",
+                fix_hint="See docs/id-conventions.md. Will become an error in v0.9.0.",
+            ))
+    return findings
+
+
 ALL_CHECKS = [
     _check_requirement_coverage,
     _check_design_test_alignment,
@@ -259,6 +297,7 @@ ALL_CHECKS = [
     _check_decision_density,
     _check_orphan_references,
     _check_insight_backlog,
+    _check_id_conventions,
 ]
 
 

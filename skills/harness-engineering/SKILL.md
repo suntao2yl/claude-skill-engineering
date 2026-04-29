@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 metadata:
   author: suntao2yl
-  version: 0.5.0
+  version: 0.6.0
 ---
 
 # Engineering (harness-engineering)
@@ -117,6 +117,14 @@ python3 ${CLAUDE_SKILL_DIR}/scripts/engineering_gc.py --project-root <path> [--a
 - After `engineering_advance.py` exits 1 (validation failure), do not skip to the next phase. Read the error output, fix the artifact, and re-run advance.
 - Do not load all upstream artifacts into a subagent prompt. Pass only the immediate upstream artifact(s) listed in the Phases table.
 - `engineering_lint.py` warnings are informational; errors are blocking. Do not ignore errors by re-running lint with `--severity warning` to hide them.
+
+## Anti-patterns
+
+Meta-rules for operating this orchestrator, distinct from per-phase gotchas above.
+
+- **Don't inline schemas into phase briefs.** Briefs in `resources/briefs/*.md` should reference `@file resources/...` for schemas, not paste them. Inlined schemas drift; referenced ones stay consistent.
+- **Don't run review in two phases.** The test phase already includes `/security-review` and multi-persona reviewers; release should not re-run them. Each capability has exactly one canonical phase — see `docs/dedup-matrix.md`.
+- **Don't extend roles by writing prose.** When you find yourself adding a new role responsibility into a brief, instead update the generated `AGENTS.md` template (Phase 3+) so the role contract is the single source of truth across tools.
 
 ## Troubleshooting
 
