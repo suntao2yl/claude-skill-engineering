@@ -15,7 +15,7 @@ allowed-tools:
   - AskUserQuestion
 metadata:
   author: suntao2yl
-  version: 0.7.0
+  version: 0.7.1
 ---
 
 # Engineering (harness-engineering)

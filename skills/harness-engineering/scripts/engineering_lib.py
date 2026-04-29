@@ -124,19 +124,26 @@ def harness_discipline_completion_verify_script() -> Path | None:
     Engineering's implementation gate prefers this script over its own
     inline verification (single source of truth). Falls back to None if
     discipline isn't installed; callers handle that case.
+
+    Two install layouts are searched:
+      1. Marketplace clone:   ~/.claude/plugins/marketplaces/<m>/plugins/harness-discipline/skills/completion-verify/scripts/completion_verify.py
+      2. Active plugin cache: ~/.claude/plugins/cache/<m>/harness-discipline/<version>/skills/completion-verify/scripts/completion_verify.py
     """
     home = Path.home()
     platform = detect_platform()
     bases = [".codex", ".claude"] if platform == "codex" else [".claude", ".codex"]
+    patterns = [
+        "**/harness-discipline/skills/completion-verify/scripts/completion_verify.py",
+        "**/harness-discipline/*/skills/completion-verify/scripts/completion_verify.py",
+    ]
     for base in bases:
         plugins = home / base / "plugins"
         if not plugins.exists():
             continue
-        for match in plugins.glob(
-            "**/harness-discipline/skills/completion-verify/scripts/completion_verify.py"
-        ):
-            if match.exists():
-                return match
+        for pattern in patterns:
+            for match in plugins.glob(pattern):
+                if match.exists():
+                    return match
     return None
 
 
